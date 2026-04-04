@@ -1,0 +1,100 @@
+"""TTS engine abstraction and implementations."""
+
+from __future__ import annotations
+
+import shutil
+import subprocess
+from typing import Protocol
+
+
+class TTSEngine(Protocol):
+    """Protocol for text-to-speech engines."""
+
+    def synthesize(
+        self, text: str, output_path: str, *, voice: str | None = None, speed: float = 1.0
+    ) -> None: ...
+
+    def available(self) -> bool: ...
+
+    @property
+    def name(self) -> str: ...
+
+
+class EspeakEngine:
+    """espeak-ng engine — lightweight, zero-config fallback."""
+
+    @property
+    def name(self) -> str:
+        return "espeak-ng"
+
+    def available(self) -> bool:
+        return shutil.which("espeak-ng") is not None or shutil.which("espeak") is not None
+
+    def _cmd(self) -> str:
+        if shutil.which("espeak-ng") is not None:
+            return "espeak-ng"
+        return "espeak"
+
+    def synthesize(
+        self, text: str, output_path: str, *, voice: str | None = None, speed: float = 1.0
+    ) -> None:
+        cmd = [self._cmd(), "-w", output_path]
+        if voice is not None:
+            cmd.extend(["-v", voice])
+        wpm = int(175 * speed)
+        cmd.extend(["-s", str(wpm)])
+        cmd.append(text)
+        subprocess.run(cmd, check=True, capture_output=True)
+
+
+class PiperEngine:
+    """Piper TTS engine — neural VITS, good quality, fast."""
+
+    @property
+    def name(self) -> str:
+        return "piper"
+
+    def available(self) -> bool:
+        return shutil.which("piper") is not None
+
+    def synthesize(
+        self, text: str, output_path: str, *, voice: str | None = None, speed: float = 1.0
+    ) -> None:
+        voice = voice or "en_US-amy-medium"
+        cmd = [
+            "piper",
+            "--model", voice,
+            "--output_file", output_path,
+            "--length_scale", str(1.0 / speed),
+        ]
+        subprocess.run(cmd, input=text.encode(), check=True, capture_output=True)
+
+
+_ENGINES: list[type[EspeakEngine] | type[PiperEngine]] = [PiperEngine, EspeakEngine]
+
+
+def resolve_engine(engine_name: str = "auto") -> TTSEngine:
+    """Resolve a TTS engine by name or auto-detect the best available."""
+    name_map: dict[str, type[EspeakEngine] | type[PiperEngine]] = {
+        "espeak": EspeakEngine,
+        "espeak-ng": EspeakEngine,
+        "piper": PiperEngine,
+    }
+    if engine_name != "auto":
+        cls = name_map.get(engine_name)
+        if cls is None:
+            msg = f"Unknown engine: {engine_name}. Available: {', '.join(name_map)}"
+            raise ValueError(msg)
+        engine = cls()
+        if not engine.available():
+            msg = f"Engine '{engine_name}' is not installed"
+            raise RuntimeError(msg)
+        return engine
+
+    for cls in _ENGINES:
+        engine = cls()
+        if engine.available():
+            return engine
+
+    msg = "No TTS engine found. Install espeak-ng or piper."
+    raise RuntimeError(msg)
