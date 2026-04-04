@@ -14,6 +14,7 @@ import termios
 import threading
 import tty
 from collections.abc import Callable
+from typing import Any
 
 from cc_tts.sentence_buffer import SentenceBuffer
 from cc_tts.speak import synthesize_and_play
@@ -44,6 +45,73 @@ def _set_winsize(fd: int, winsize: bytes) -> None:
     fcntl.ioctl(fd, termios.TIOCSWINSZ, winsize)
 
 
+def _spawn_child(args: list[str], master_fd: int, slave_fd: int) -> int:
+    """Fork and exec the child process under the slave PTY. Returns child PID."""
+    pid = os.fork()
+    if pid == 0:
+        os.close(master_fd)
+        os.setsid()
+        os.dup2(slave_fd, 0)
+        os.dup2(slave_fd, 1)
+        os.dup2(slave_fd, 2)
+        if slave_fd > 2:
+            os.close(slave_fd)
+        os.execvp(args[0], args)  # noqa: S606
+    return pid
+
+
+def _setup_terminal(master_fd: int) -> tuple[int, bool, Any]:
+    """Configure stdin raw mode if TTY. Returns (stdin_fd, is_tty, old_attrs)."""
+    try:
+        stdin_fd = sys.stdin.fileno()
+        is_tty = os.isatty(stdin_fd)
+    except (OSError, ValueError, AttributeError):
+        return -1, False, None
+
+    if not is_tty:
+        return stdin_fd, False, None
+
+    old_attrs = termios.tcgetattr(stdin_fd)
+    tty.setraw(stdin_fd)
+    atexit.register(termios.tcsetattr, stdin_fd, termios.TCSAFLUSH, old_attrs)
+
+    try:
+        _set_winsize(master_fd, _get_winsize(stdin_fd))
+    except (OSError, termios.error):
+        pass
+
+    return stdin_fd, True, old_attrs
+
+
+def _proxy_loop(master_fd: int, stdin_fd: int, is_tty: bool, stream_filter: StreamFilter) -> None:
+    """Select loop proxying I/O between terminal and child PTY."""
+    fds = [stdin_fd, master_fd] if is_tty else [master_fd]
+    while True:
+        try:
+            rfds, _, _ = select.select(fds, [], [])
+        except (OSError, ValueError):
+            break
+
+        if stdin_fd in rfds and is_tty:
+            try:
+                data = os.read(stdin_fd, 4096)
+            except OSError:
+                break
+            if not data:
+                break
+            os.write(master_fd, data)
+
+        if master_fd in rfds:
+            try:
+                data = os.read(master_fd, 4096)
+            except OSError:
+                break
+            if not data:
+                break
+            os.write(sys.stdout.fileno(), data)
+            stream_filter.feed(data)
+
+
 def run_pty_proxy(
     args: list[str],
     *,
@@ -59,44 +127,20 @@ def run_pty_proxy(
         Child process exit code.
     """
     master_fd, slave_fd = pty.openpty()
-
-    # Set initial window size from real terminal (if available)
-    try:
-        winsize = _get_winsize(sys.stdin.fileno())
-        _set_winsize(master_fd, winsize)
-    except (OSError, termios.error):
-        pass
-
-    pid = os.fork()
-
-    if pid == 0:
-        # Child: become session leader, attach to slave PTY, exec command
-        os.close(master_fd)
-        os.setsid()
-        os.dup2(slave_fd, 0)
-        os.dup2(slave_fd, 1)
-        os.dup2(slave_fd, 2)
-        if slave_fd > 2:
-            os.close(slave_fd)
-        os.execvp(args[0], args)
-
-    # Parent: proxy I/O
+    pid = _spawn_child(args, master_fd, slave_fd)
     os.close(slave_fd)
 
-    # TTS pipeline
     tts_queue: queue.Queue[str | None] = queue.Queue(maxsize=10)
     buf = SentenceBuffer(on_sentence=tts_queue.put, max_chars=2000)
     stream_filter = StreamFilter(buf)
 
     worker = threading.Thread(
-        target=_tts_worker,
-        args=(tts_queue,),
-        kwargs={"on_speak": on_speak},
-        daemon=False,
+        target=_tts_worker, args=(tts_queue,), kwargs={"on_speak": on_speak}, daemon=False
     )
     worker.start()
 
-    # SIGWINCH forwarding
+    stdin_fd, is_tty, old_attrs = _setup_terminal(master_fd)
+
     def _on_winsize(signum: int, frame: object) -> None:
         try:
             _set_winsize(master_fd, _get_winsize(sys.stdin.fileno()))
@@ -105,51 +149,13 @@ def run_pty_proxy(
 
     signal.signal(signal.SIGWINCH, _on_winsize)
 
-    # Save and set raw mode on stdin (if it's a TTY)
     try:
-        stdin_fd = sys.stdin.fileno()
-        is_tty = os.isatty(stdin_fd)
-    except (OSError, ValueError, AttributeError):
-        stdin_fd = -1
-        is_tty = False
-    old_attrs = None
-    if is_tty:
-        old_attrs = termios.tcgetattr(stdin_fd)
-        tty.setraw(stdin_fd)
-        atexit.register(termios.tcsetattr, stdin_fd, termios.TCSAFLUSH, old_attrs)
-
-    try:
-        fds = [stdin_fd, master_fd] if is_tty else [master_fd]
-        while True:
-            try:
-                rfds, _, _ = select.select(fds, [], [])
-            except (OSError, ValueError):
-                break
-
-            if stdin_fd in rfds and is_tty:
-                try:
-                    data = os.read(stdin_fd, 4096)
-                except OSError:
-                    break
-                if not data:
-                    break
-                os.write(master_fd, data)
-
-            if master_fd in rfds:
-                try:
-                    data = os.read(master_fd, 4096)
-                except OSError:
-                    break
-                if not data:
-                    break
-                os.write(sys.stdout.fileno(), data)
-                stream_filter.feed(data)
+        _proxy_loop(master_fd, stdin_fd, is_tty, stream_filter)
     finally:
         if old_attrs is not None:
             termios.tcsetattr(stdin_fd, termios.TCSAFLUSH, old_attrs)
-
         stream_filter.finish()
-        tts_queue.put(None)  # stop worker
+        tts_queue.put(None)
         worker.join(timeout=30)
 
     _, status = os.waitpid(pid, 0)

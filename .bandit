@@ -1,0 +1,3 @@
+[bandit]
+# B606: os.execvp is intentional — PTY proxy must exec the child process
+skips: B606
