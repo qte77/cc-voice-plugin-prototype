@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-04
+
+### Added
+
+- `cc_stt` module with STTEngine protocol (Moonshine, Vosk) and auto-detection
+- `STTConfig` with `.cc-voice.toml` [stt] section and `CC_STT_*` env overrides
+- `MicCapture` with sounddevice streaming and `NoMicrophoneError` graceful degradation
+- `UtteranceBuffer` with energy-based VAD, silence boundary detection, max duration timeout
+- `inject_text()` PTY input for STT-to-stdin pipeline
+- `should_auto_listen()` hook handler with graceful error fallback
+- `/listen` skill definition (planned: live listen pipeline)
+- 47 new tests (113 total) covering all STT modules
+- `sounddevice>=0.5.0` as optional `stt` dependency
+
 ## [0.2.0] - 2026-04-04
 
 ### Changed

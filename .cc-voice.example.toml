@@ -1,11 +1,20 @@
 # CC-Voice configuration
 # Copy to .cc-voice.toml and adjust as needed.
-# Environment overrides: CC_TTS_ENGINE, CC_TTS_VOICE, CC_TTS_SPEED,
-# CC_TTS_AUTO_READ, CC_TTS_MAX_CHARS, CC_TTS_PLAYER
 
+# TTS settings (env overrides: CC_TTS_ENGINE, CC_TTS_VOICE, CC_TTS_SPEED,
+# CC_TTS_AUTO_READ, CC_TTS_MAX_CHARS, CC_TTS_PLAYER)
 engine = "auto"              # "kokoro" | "piper" | "espeak" | "auto"
 voice = "en_US-amy-medium"   # Engine-specific voice name
 speed = 1.0                  # Playback speed multiplier
 auto_read = false            # Speak every Claude response via Stop hook
 max_chars = 2000             # Truncate input text beyond this limit
 player = "auto"              # "mpv" | "ffplay" | "aplay" | "auto"
+
+# STT settings (env overrides: CC_STT_ENGINE, CC_STT_LANGUAGE,
+# CC_STT_WAKE_WORD, CC_STT_MIC_DEVICE, CC_STT_AUTO_LISTEN)
+[stt]
+engine = "auto"              # "moonshine" | "vosk" | "auto"
+language = "en"
+wake_word = "hey_claude"
+mic_device = "default"
+auto_listen = false          # Start listening on session start
