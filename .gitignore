@@ -53,3 +53,8 @@ __pycache__/
 *.pyc
 .venv/
 *.egg-info/
+dist/
+.pytest_cache/
+.ruff_cache/
+# Claude Code local overrides
+.claude/settings.local.json
