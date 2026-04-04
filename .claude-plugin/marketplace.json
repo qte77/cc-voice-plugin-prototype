@@ -4,15 +4,15 @@
     "name": "qte77"
   },
   "metadata": {
-    "description": "End-to-end voice plugin for Claude Code — TTS output and STT input (planned)",
-    "version": "0.2.0"
+    "description": "End-to-end voice plugin for Claude Code — TTS output and STT input",
+    "version": "0.3.0"
   },
   "plugins": [
     {
       "name": "cc-voice",
       "source": "./",
-      "description": "TTS via PTY proxy and Stop hook (/speak), STT via Moonshine (/listen, planned)",
-      "version": "0.2.0"
+      "description": "TTS via PTY proxy and Stop hook (/speak), STT via Moonshine/Vosk (/listen)",
+      "version": "0.3.0"
     }
   ]
 }
