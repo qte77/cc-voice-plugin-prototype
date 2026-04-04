@@ -1,7 +1,7 @@
 {
-  "name": "cc-tts",
-  "version": "0.1.0",
-  "description": "Text-to-speech output for Claude Code. Adds /speak command and optional auto-read mode.",
+  "name": "cc-voice",
+  "version": "0.2.0",
+  "description": "End-to-end voice for Claude Code. TTS output via /speak, STT input via /listen (planned).",
   "author": {
     "name": "qte77"
   }

@@ -7,7 +7,7 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-CONFIG_FILENAME = ".cc-tts.toml"
+CONFIG_FILENAMES = [".cc-voice.toml", ".cc-tts.toml"]
 
 
 @dataclass
@@ -23,12 +23,13 @@ class TTSConfig:
 
 
 def _find_config_file() -> Path | None:
-    """Walk up from cwd to find .cc-tts.toml."""
+    """Walk up from cwd to find .cc-voice.toml (or legacy .cc-tts.toml)."""
     current = Path.cwd()
     for directory in [current, *current.parents]:
-        candidate = directory / CONFIG_FILENAME
-        if candidate.is_file():
-            return candidate
+        for filename in CONFIG_FILENAMES:
+            candidate = directory / filename
+            if candidate.is_file():
+                return candidate
     return None
 
 

@@ -71,7 +71,7 @@
     "commit-helper@qte77-claude-code-utils": true,
     "codebase-tools@qte77-claude-code-utils": true,
     "cc-meta@qte77-claude-code-utils": true,
-    "cc-tts@cc-tts": true
+    "cc-voice@cc-voice": true
   },
   "extraKnownMarketplaces": {
     "qte77-claude-code-utils": {

@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-04
+
+### Changed
+
+- Renamed from cc-tts to cc-voice (end-to-end voice scope)
+- Config file: `.cc-voice.toml` (reads legacy `.cc-tts.toml` as fallback)
+- Plugin name: `cc-voice` in plugin.json and marketplace.json
+
 ## [0.1.0] - 2026-04-04
 
 ### Added
