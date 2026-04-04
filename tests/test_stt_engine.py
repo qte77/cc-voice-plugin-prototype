@@ -16,7 +16,7 @@ from cc_stt.engine import (
 
 
 class TestSTTEngineProtocol:
-    def test_protocol_has_required_methods(self) -> None:
+    def test_protocol_has_required_methods(self, tmp_path: Path) -> None:
         """STTEngine protocol requires transcribe, available, and name."""
 
         class FakeEngine:
@@ -33,7 +33,7 @@ class TestSTTEngineProtocol:
         engine: STTEngine = FakeEngine()
         assert engine.name == "fake"
         assert engine.available() is True
-        assert engine.transcribe("/tmp/test.wav") == "hello"
+        assert engine.transcribe(str(tmp_path / "test.wav")) == "hello"
 
 
 class TestMoonshineEngine:
