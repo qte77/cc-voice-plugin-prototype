@@ -6,7 +6,7 @@
 ![Version](https://img.shields.io/badge/version-0.1.0-58f4c2.svg)
 [![CodeQL](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/codeql.yaml/badge.svg)](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/codeql.yaml)
 [![CodeFactor](https://www.codefactor.io/repository/github/qte77/cc-tts-plugin-protoype/badge)](https://www.codefactor.io/repository/github/qte77/cc-tts-plugin-protoype)
-[![Dependabot](https://img.shields.io/badge/dependabot-enabled-58f4c2.svg?logo=dependabot)](https://github.com/qte77/cc-tts-plugin-protoype/security/dependabot)
+[![Dependabot](https://img.shields.io/badge/dependabot-enabled-58f4c2.svg?logo=dependabot)](https://github.com/qte77/cc-tts-plugin-protoype/blob/main/.github/dependabot.yaml)
 [![Link Checker](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/links-fail-fast.yaml/badge.svg)](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/links-fail-fast.yaml)
 
 Text-to-speech output plugin for Claude Code. Speaks Claude's responses aloud using local/OSS TTS engines.
@@ -25,9 +25,9 @@ Session summary generated with three engines for comparison:
 
 | Engine | Quality | File |
 |--------|---------|------|
-| espeak-ng | Robotic (rule-based) | [assets/audio/cc-tts-espeak-ng-summary.wav](assets/audio/cc-tts-espeak-ng-summary.wav) |
-| Piper (amy) | Natural (neural VITS, ~60MB) | [assets/audio/cc-tts-piper-summary.wav](assets/audio/cc-tts-piper-summary.wav) |
-| Kokoro (sarah) | Best local (82M params) | [assets/audio/cc-tts-kokoro-summary.wav](assets/audio/cc-tts-kokoro-summary.wav) |
+| espeak-ng | Robotic (rule-based) | [assets/audio/cc-tts-summary-espeak-ng.wav](assets/audio/cc-tts-summary-espeak-ng.wav) |
+| Piper (amy) | Natural (neural VITS, ~60MB) | [assets/audio/cc-tts-summary-piper.wav](assets/audio/cc-tts-summary-piper.wav) |
+| Kokoro (sarah) | Best local (82M params) | [assets/audio/cc-tts-summary-kokoro.wav](assets/audio/cc-tts-summary-kokoro.wav) |
 
 ## Quick Start
 
@@ -64,7 +64,7 @@ Environment overrides: `CC_TTS_ENGINE`, `CC_TTS_VOICE`, `CC_TTS_SPEED`, `CC_TTS_
 
 ## Architecture
 
-```
+```text
 cc-tts-wrap claude
     ↓
 PTY proxy (pty_proxy.py) ↔ claude (interactive)

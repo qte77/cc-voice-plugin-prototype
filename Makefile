@@ -1,6 +1,6 @@
 .SILENT:
 .ONESHELL:
-.PHONY: setup setup_dev setup_tts setup_piper setup_kokoro validate lint_fix quick_validate lint_src lint_tests type_check test test_coverage speak wrap help
+.PHONY: setup setup_dev setup_tts setup_piper setup_kokoro validate lint_fix quick_validate lint_src lint_tests lint_md lint_links type_check test test_coverage speak wrap help
 .DEFAULT_GOAL := help
 
 # -- quiet mode (default: quiet; set VERBOSE=1 for full output) --
@@ -54,6 +54,18 @@ lint_tests: ## Lint and format tests with ruff
 	echo "--- lint_tests$(if $(RUFF_QUIET), [quiet])"
 	uv run ruff format --check $(RUFF_QUIET) tests/
 	uv run ruff check $(RUFF_QUIET) tests/
+
+lint_md: ## Lint markdown files
+	echo "--- lint_md"
+	markdownlint '*.md' 'assets/**/*.md' '.claude/**/*.md' --fix
+
+lint_links: ## Check for broken links with lychee
+	echo "--- lint_links"
+	if command -v lychee > /dev/null 2>&1; then
+		lychee '*.md' 'assets/**/*.md' '.claude/**/*.md'
+	else
+		echo "lychee not installed — skipping"
+	fi
 
 type_check: ## Run pyright type checker
 	echo "--- type_check"
