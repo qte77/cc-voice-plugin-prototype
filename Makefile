@@ -1,6 +1,6 @@
 .SILENT:
 .ONESHELL:
-.PHONY: setup setup_dev setup_tts setup_piper setup_kokoro validate lint_fix quick_validate lint_src lint_tests lint_md lint_links type_check test test_coverage speak wrap help
+.PHONY: setup setup_dev setup_tts setup_piper setup_kokoro validate lint_fix quick_validate lint_src lint_tests lint_md lint_links type_check test test_coverage speak wrap bump_patch bump_minor bump_major help
 .DEFAULT_GOAL := help
 
 # -- quiet mode (default: quiet; set VERBOSE=1 for full output) --
@@ -88,6 +88,19 @@ speak: ## Test TTS: make speak TEXT="hello"
 
 wrap: ## Wrap command with live TTS: make wrap CMD="echo hello"
 	uv run python -m cc_tts.pty_proxy $(CMD)
+
+
+# MARK: VERSION
+
+
+bump_patch: ## Bump patch version (0.3.0 → 0.3.1)
+	uv run bump-my-version bump patch
+
+bump_minor: ## Bump minor version (0.3.0 → 0.4.0)
+	uv run bump-my-version bump minor
+
+bump_major: ## Bump major version (0.3.0 → 1.0.0)
+	uv run bump-my-version bump major
 
 
 # MARK: HELP
