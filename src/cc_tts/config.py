@@ -3,13 +3,9 @@
 from __future__ import annotations
 
 import os
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
-
-try:
-    import tomllib
-except ModuleNotFoundError:
-    import tomli as tomllib  # type: ignore[no-redef]
 
 CONFIG_FILENAME = ".cc-tts.toml"
 
@@ -71,8 +67,8 @@ def load_config() -> TTSConfig:
     if config_file is not None:
         with config_file.open("rb") as f:
             data = tomllib.load(f)
-        for key, value in data.items():
+        for key in data:
             if hasattr(config, key):
-                setattr(config, key, value)
+                setattr(config, key, data[key])
     _apply_env_overrides(config)
     return config

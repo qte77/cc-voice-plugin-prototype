@@ -2,7 +2,7 @@
 name = "cc-tts"
 version = "0.1.0"
 description = "Text-to-speech output plugin for Claude Code"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
 authors = [{ name = "qte77" }]
 dependencies = []
@@ -16,6 +16,7 @@ test = ["pytest>=8.0", "pytest-cov>=6.0"]
 
 [project.scripts]
 cc-tts = "cc_tts.speak:main"
+cc-tts-wrap = "cc_tts.pty_proxy:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -24,19 +25,49 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/cc_tts"]
 
+
+# MARK: Linting
+
+
 [tool.ruff]
+target-version = "py311"
+src = ["src", "tests"]
 line-length = 100
-target-version = "py310"
-src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["E501"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+
+# MARK: Type checking
+
+
 [tool.pyright]
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 include = ["src"]
 typeCheckingMode = "strict"
+useLibraryCodeForTypes = false
+
+
+# MARK: Testing
+
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+addopts = "--strict-markers"
 pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+include = ["src/**/*.py"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "raise AssertionError",
+    "raise NotImplementedError",
+]

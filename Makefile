@@ -1,45 +1,70 @@
 .SILENT:
 .ONESHELL:
-.PHONY: setup setup_dev validate quick_validate lint type_check test test_coverage speak help
+.PHONY: setup setup_dev setup_tts validate quick_validate lint_src lint_tests type_check test test_coverage speak wrap help
 .DEFAULT_GOAL := help
+
+# -- quiet mode (default: quiet; set VERBOSE=1 for full output) --
+VERBOSE ?=
+ifndef VERBOSE
+  RUFF_QUIET   := --quiet
+  PYTEST_QUIET := -q --tb=short --no-header
+  COV_QUIET    := --cov-report=
+endif
 
 
 # MARK: SETUP
 
 
 setup: ## Install cc-tts package
-	uv pip install -e .
+	uv sync --frozen 2>/dev/null || uv pip install -e .
 
 setup_dev: ## Install with dev + test deps
 	uv pip install -e ".[dev,test]"
+
+setup_tts: ## Install TTS engine + audio player (espeak-ng, mpv)
+	sudo apt-get update && sudo apt-get install -y espeak-ng mpv
 
 
 # MARK: VALIDATION
 
 
-validate: lint type_check test ## Full validation (lint + type + test)
+validate: lint_src lint_tests type_check test ## Full validation (lint + type + test)
+	echo "--- validate: all passed"
 
-quick_validate: lint type_check ## Fast validation (lint + type)
+quick_validate: lint_src type_check ## Fast validation (lint + type)
+	echo "--- quick_validate: passed"
 
-lint: ## Run ruff linter + formatter check
-	ruff check src/ tests/
-	ruff format --check src/ tests/
+lint_src: ## Lint and format src with ruff
+	echo "--- lint_src$(if $(RUFF_QUIET), [quiet])"
+	uv run ruff format --check $(RUFF_QUIET) src/
+	uv run ruff check $(RUFF_QUIET) src/
+
+lint_tests: ## Lint and format tests with ruff
+	echo "--- lint_tests$(if $(RUFF_QUIET), [quiet])"
+	uv run ruff format --check $(RUFF_QUIET) tests/
+	uv run ruff check $(RUFF_QUIET) tests/
 
 type_check: ## Run pyright type checker
-	pyright src/
+	echo "--- type_check"
+	uv run pyright src/
 
 test: ## Run pytest
-	pytest
+	echo "--- test$(if $(PYTEST_QUIET), [quiet])"
+	uv run pytest $(PYTEST_QUIET)
 
 test_coverage: ## Run pytest with coverage
-	pytest --cov=cc_tts --cov-report=term-missing
+	echo "--- test_coverage"
+	uv run pytest --cov=cc_tts --cov-report=term-missing $(COV_QUIET)
 
 
 # MARK: RUN
 
 
 speak: ## Test TTS: make speak TEXT="hello"
-	python -m cc_tts.speak $(TEXT)
+	uv run python -m cc_tts.speak $(TEXT)
+
+wrap: ## Wrap command with live TTS: make wrap CMD="echo hello"
+	uv run python -m cc_tts.pty_proxy $(CMD)
 
 
 # MARK: HELP
