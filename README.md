@@ -4,10 +4,10 @@
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-58f4c2.svg)](LICENSE)
 ![Version](https://img.shields.io/badge/version-0.1.0-58f4c2.svg)
-[![CodeQL](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/codeql.yaml/badge.svg)](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/codeql.yaml)
-[![CodeFactor](https://www.codefactor.io/repository/github/qte77/cc-tts-plugin-protoype/badge)](https://www.codefactor.io/repository/github/qte77/cc-tts-plugin-protoype)
-[![Dependabot](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/dependabot/dependabot-updates)
-[![Link Checker](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/links-fail-fast.yaml/badge.svg)](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/links-fail-fast.yaml)
+[![CodeQL](https://github.com/qte77/cc-voice-plugin-prototype/actions/workflows/codeql.yaml/badge.svg)](https://github.com/qte77/cc-voice-plugin-prototype/actions/workflows/codeql.yaml)
+[![CodeFactor](https://www.codefactor.io/repository/github/qte77/cc-voice-plugin-prototype/badge)](https://www.codefactor.io/repository/github/qte77/cc-voice-plugin-prototype)
+[![Dependabot](https://github.com/qte77/cc-voice-plugin-prototype/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/qte77/cc-voice-plugin-prototype/actions/workflows/dependabot/dependabot-updates)
+[![Link Checker](https://github.com/qte77/cc-voice-plugin-prototype/actions/workflows/links-fail-fast.yaml/badge.svg)](https://github.com/qte77/cc-voice-plugin-prototype/actions/workflows/links-fail-fast.yaml)
 
 Text-to-speech output plugin for Claude Code. Speaks Claude's responses aloud using local/OSS TTS engines.
 
