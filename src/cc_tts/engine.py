@@ -21,7 +21,6 @@ class TTSEngine(Protocol):
 
 
 _ESPEAK_DEFAULT_VOICE = "en-us"
-_PIPER_VOICE_PREFIX = "en_"
 
 
 class EspeakEngine:

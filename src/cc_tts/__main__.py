@@ -1,5 +1,18 @@
-"""Allow running as python -m cc_tts."""
+"""Allow running as python -m cc_tts [speak|wrap]."""
 
-from cc_tts.speak import main
+import sys
 
-main()
+
+def _main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1] == "wrap":
+        sys.argv = sys.argv[1:]  # shift so pty_proxy sees ["wrap", "claude", ...]
+        from cc_tts.pty_proxy import main
+
+        main()
+    else:
+        from cc_tts.speak import main
+
+        main()
+
+
+_main()

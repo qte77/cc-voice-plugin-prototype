@@ -1,6 +1,6 @@
 .SILENT:
 .ONESHELL:
-.PHONY: setup setup_dev setup_tts setup_piper setup_kokoro validate quick_validate lint_src lint_tests type_check test test_coverage speak wrap help
+.PHONY: setup setup_dev setup_tts setup_piper setup_kokoro validate lint_fix quick_validate lint_src lint_tests type_check test test_coverage speak wrap help
 .DEFAULT_GOAL := help
 
 # -- quiet mode (default: quiet; set VERBOSE=1 for full output) --
@@ -39,6 +39,11 @@ validate: lint_src lint_tests type_check test ## Full validation (lint + type + 
 
 quick_validate: lint_src type_check ## Fast validation (lint + type)
 	echo "--- quick_validate: passed"
+
+lint_fix: ## Auto-fix lint and format issues
+	echo "--- lint_fix"
+	uv run ruff format src/ tests/
+	uv run ruff check --fix src/ tests/
 
 lint_src: ## Lint and format src with ruff
 	echo "--- lint_src$(if $(RUFF_QUIET), [quiet])"
