@@ -1,0 +1,11 @@
+# CC-TTS configuration
+# Copy to .cc-tts.toml and adjust as needed.
+# Environment overrides: CC_TTS_ENGINE, CC_TTS_VOICE, CC_TTS_SPEED,
+# CC_TTS_AUTO_READ, CC_TTS_MAX_CHARS, CC_TTS_PLAYER
+
+engine = "auto"              # "kokoro" | "piper" | "espeak" | "auto"
+voice = "en_US-amy-medium"   # Engine-specific voice name
+speed = 1.0                  # Playback speed multiplier
+auto_read = false            # Speak every Claude response via Stop hook
+max_chars = 2000             # Truncate input text beyond this limit
+player = "auto"              # "mpv" | "ffplay" | "aplay" | "auto"
