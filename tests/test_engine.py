@@ -94,6 +94,18 @@ class TestKokoroEngine:
         assert cmd[0] == "kokoro-tts"
         assert out in cmd
 
+    @patch("subprocess.run")
+    @patch("shutil.which", return_value="/usr/bin/kokoro-tts")
+    def test_synthesize_ignores_piper_voice(
+        self, mock_which: object, mock_run: object, tmp_path: Path
+    ) -> None:
+        out = str(tmp_path / "out.wav")
+        engine = KokoroEngine()
+        engine.synthesize("hello", out, voice="en_US-amy-medium")
+        cmd = mock_run.call_args[0][0]  # type: ignore[union-attr]
+        assert "en_US-amy-medium" not in cmd
+        assert "af_sarah" in cmd
+
 
 class TestResolveEngine:
     @patch("shutil.which", return_value=None)

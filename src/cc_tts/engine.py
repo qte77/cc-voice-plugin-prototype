@@ -157,6 +157,9 @@ class KokoroEngine:
         import os
         import tempfile
 
+        # Ignore Piper/espeak voice names — Kokoro uses its own format (e.g., af_sarah)
+        if voice is not None and "-" in voice:
+            voice = "af_sarah"
         voice = voice or "af_sarah"
         model_dir = self._ensure_models(_KOKORO_MODEL_DIR)
 
