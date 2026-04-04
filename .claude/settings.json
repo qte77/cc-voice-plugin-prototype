@@ -63,14 +63,6 @@
     "type": "command",
     "command": "bash .claude/scripts/statusline.sh"
   },
-  "extraKnownMarketplaces": {
-    "qte77-claude-code-utils": {
-      "source": {
-        "source": "github",
-        "repo": "qte77/claude-code-utils-plugin"
-      }
-    }
-  },
   "enabledPlugins": {
     "context7@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
@@ -78,7 +70,16 @@
     "python-dev@qte77-claude-code-utils": true,
     "commit-helper@qte77-claude-code-utils": true,
     "codebase-tools@qte77-claude-code-utils": true,
-    "cc-meta@qte77-claude-code-utils": true
+    "cc-meta@qte77-claude-code-utils": true,
+    "cc-tts@cc-tts": true
+  },
+  "extraKnownMarketplaces": {
+    "qte77-claude-code-utils": {
+      "source": {
+        "source": "github",
+        "repo": "qte77/claude-code-utils-plugin"
+      }
+    }
   },
   "outputStyle": "default",
   "spinnerTipsEnabled": true,
