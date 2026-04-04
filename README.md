@@ -10,11 +10,23 @@ Text-to-speech output plugin for Claude Code. Speaks Claude's responses aloud us
 - **Multi-engine** — espeak-ng (zero-config), Piper (neural), with engine auto-detection
 - **On-demand `/speak` skill** — speak specific text or toggle auto-read mode
 
+## Audio Examples
+
+Session summary generated with three engines for comparison:
+
+| Engine | Quality | File |
+|--------|---------|------|
+| espeak-ng | Robotic (rule-based) | [assets/audio/cc-tts-espeak-ng-summary.wav](assets/audio/cc-tts-espeak-ng-summary.wav) |
+| Piper (amy) | Natural (neural VITS, ~60MB) | [assets/audio/cc-tts-piper-summary.wav](assets/audio/cc-tts-piper-summary.wav) |
+| Kokoro (sarah) | Best local (82M params) | [assets/audio/cc-tts-kokoro-summary.wav](assets/audio/cc-tts-kokoro-summary.wav) |
+
 ## Quick Start
 
 ```bash
 make setup_dev    # install package + dev deps
-make setup_tts    # install espeak-ng + mpv
+make setup_tts    # install espeak-ng + mpv (robotic, zero-config)
+make setup_piper  # install Piper (neural, good quality)
+make setup_kokoro # install Kokoro (best local quality)
 
 # Live TTS (PTY wrapper — real-time)
 cc-tts-wrap claude
@@ -31,7 +43,7 @@ cc-tts "Hello from Claude Code"
 Create `.cc-tts.toml` in project root:
 
 ```toml
-engine = "auto"              # "espeak" | "piper" | "auto"
+engine = "auto"              # "espeak" | "piper" | "kokoro" | "auto"
 voice = "en_US-amy-medium"   # engine-specific voice name
 speed = 1.0
 auto_read = false            # enable Stop hook auto-read

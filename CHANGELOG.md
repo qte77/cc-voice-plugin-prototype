@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- Audio examples comparing espeak-ng, Piper, and Kokoro engines (`assets/audio/`)
+- Makefile recipes for Piper (`setup_piper`) and Kokoro (`setup_kokoro`) installation
+- Marketplace manifest for local plugin install (`.claude-plugin/marketplace.json`)
+
 ## [0.1.0] - 2026-04-04
 
 ### Added
