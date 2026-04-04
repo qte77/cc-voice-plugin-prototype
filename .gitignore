@@ -53,5 +53,3 @@ __pycache__/
 *.pyc
 .venv/
 *.egg-info/
-# uv
-uv.lock
