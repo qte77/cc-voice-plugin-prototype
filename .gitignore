@@ -48,3 +48,10 @@
 /.claude/skills
 /.idea
 /.vscode
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+# uv
+uv.lock
