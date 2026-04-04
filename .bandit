@@ -1,0 +1,7 @@
+[bandit]
+# FIXME codefactor.io: suppress false positives for this project's use cases
+# B101: assert in tests — standard pytest idiom, not production code
+# B404: import subprocess — required for TTS engine CLI invocation
+# B603: subprocess without shell=True — intentional, prevents shell injection
+# B606: os.execvp — PTY proxy must exec child process directly
+skips: B101,B404,B603,B606

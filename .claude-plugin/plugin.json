@@ -1,0 +1,8 @@
+{
+  "name": "cc-tts",
+  "version": "0.1.0",
+  "description": "Text-to-speech output for Claude Code. Adds /speak command and optional auto-read mode.",
+  "author": {
+    "name": "qte77"
+  }
+}
