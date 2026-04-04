@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from cc_tts.engine import EspeakEngine, PiperEngine, resolve_engine
+from cc_tts.engine import EspeakEngine, KokoroEngine, PiperEngine, resolve_engine
 
 
 class TestEspeakEngine:
@@ -59,6 +59,29 @@ class TestPiperEngine:
         assert mock_run.call_args.kwargs.get("input") == b"hello"  # type: ignore[union-attr]
 
 
+class TestKokoroEngine:
+    def test_name(self) -> None:
+        assert KokoroEngine().name == "kokoro"
+
+    @patch("shutil.which", return_value="/usr/bin/kokoro-tts")
+    def test_available_when_installed(self, mock_which: object) -> None:
+        assert KokoroEngine().available() is True
+
+    @patch("shutil.which", return_value=None)
+    def test_unavailable_when_missing(self, mock_which: object) -> None:
+        assert KokoroEngine().available() is False
+
+    @patch("subprocess.run")
+    @patch("shutil.which", return_value="/usr/bin/kokoro-tts")
+    def test_synthesize_writes_to_file(self, mock_which: object, mock_run: object) -> None:
+        engine = KokoroEngine()
+        engine.synthesize("hello", "/tmp/out.wav", voice="af_sarah")
+        mock_run.assert_called_once()  # type: ignore[union-attr]
+        cmd = mock_run.call_args[0][0]  # type: ignore[union-attr]
+        assert cmd[0] == "kokoro-tts"
+        assert "/tmp/out.wav" in cmd
+
+
 class TestResolveEngine:
     @patch("shutil.which", return_value=None)
     def test_raises_when_no_engine(self, mock_which: object) -> None:
@@ -70,8 +93,15 @@ class TestResolveEngine:
         with pytest.raises(ValueError, match="Unknown engine"):
             resolve_engine("nonexistent")
 
+    @patch(
+        "shutil.which", side_effect=lambda x: "/usr/bin/kokoro-tts" if x == "kokoro-tts" else None
+    )
+    def test_auto_prefers_kokoro(self, mock_which: object) -> None:
+        engine = resolve_engine("auto")
+        assert engine.name == "kokoro"
+
     @patch("shutil.which", side_effect=lambda x: "/usr/bin/espeak-ng" if x == "espeak-ng" else None)
-    def test_auto_selects_available(self, mock_which: object) -> None:
+    def test_auto_falls_back_to_espeak(self, mock_which: object) -> None:
         engine = resolve_engine("auto")
         assert engine.name == "espeak-ng"
 

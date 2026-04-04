@@ -78,15 +78,55 @@ class PiperEngine:
         subprocess.run(cmd, input=text.encode(), check=True, capture_output=True)
 
 
-_ENGINES: list[type[EspeakEngine] | type[PiperEngine]] = [PiperEngine, EspeakEngine]
+class KokoroEngine:
+    """Kokoro TTS engine — best local quality, 82M params."""
+
+    @property
+    def name(self) -> str:
+        return "kokoro"
+
+    def available(self) -> bool:
+        return shutil.which("kokoro-tts") is not None
+
+    def synthesize(
+        self, text: str, output_path: str, *, voice: str | None = None, speed: float = 1.0
+    ) -> None:
+        import tempfile
+
+        voice = voice or "af_sarah"
+        # kokoro-tts reads from a file, not stdin
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
+            f.write(text)
+            txt_path = f.name
+        cmd = [
+            "kokoro-tts",
+            txt_path,
+            output_path,
+            "--voice",
+            voice,
+            "--lang",
+            "en-us",
+            "--speed",
+            str(speed),
+        ]
+        try:
+            subprocess.run(cmd, check=True, capture_output=True)
+        finally:
+            import os
+
+            os.unlink(txt_path)
+
+
+_ENGINE_TYPES = [KokoroEngine, PiperEngine, EspeakEngine]
 
 
 def resolve_engine(engine_name: str = "auto") -> TTSEngine:
-    """Resolve a TTS engine by name or auto-detect the best available."""
-    name_map: dict[str, type[EspeakEngine] | type[PiperEngine]] = {
+    """Resolve a TTS engine by name or auto-detect best available (kokoro > piper > espeak)."""
+    name_map: dict[str, type[KokoroEngine] | type[EspeakEngine] | type[PiperEngine]] = {
         "espeak": EspeakEngine,
         "espeak-ng": EspeakEngine,
         "piper": PiperEngine,
+        "kokoro": KokoroEngine,
     }
     if engine_name != "auto":
         cls = name_map.get(engine_name)
@@ -99,10 +139,10 @@ def resolve_engine(engine_name: str = "auto") -> TTSEngine:
             raise RuntimeError(msg)
         return engine
 
-    for cls in _ENGINES:
+    for cls in _ENGINE_TYPES:
         engine = cls()
         if engine.available():
             return engine
 
-    msg = "No TTS engine found. Install espeak-ng or piper."
+    msg = "No TTS engine found. Install kokoro-tts, piper, or espeak-ng."
     raise RuntimeError(msg)
