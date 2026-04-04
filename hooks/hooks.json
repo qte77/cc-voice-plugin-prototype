@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -m cc_tts.hook_handler",
+            "command": "cd $CLAUDE_PLUGIN_ROOT && uv run python -m cc_tts.hook_handler",
             "timeout": 30
           }
         ]

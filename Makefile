@@ -1,6 +1,6 @@
 .SILENT:
 .ONESHELL:
-.PHONY: setup setup_dev setup_tts validate quick_validate lint_src lint_tests type_check test test_coverage speak wrap help
+.PHONY: setup setup_dev setup_tts setup_piper setup_kokoro validate quick_validate lint_src lint_tests type_check test test_coverage speak wrap help
 .DEFAULT_GOAL := help
 
 # -- quiet mode (default: quiet; set VERBOSE=1 for full output) --
@@ -21,8 +21,14 @@ setup: ## Install cc-tts package
 setup_dev: ## Install with dev + test deps
 	uv pip install -e ".[dev,test]"
 
-setup_tts: ## Install TTS engine + audio player (espeak-ng, mpv)
+setup_tts: ## Install espeak-ng + mpv (minimal, robotic)
 	sudo apt-get update && sudo apt-get install -y espeak-ng mpv
+
+setup_piper: ## Install Piper TTS (neural, good quality, ~60MB model)
+	uv pip install piper-tts
+
+setup_kokoro: ## Install Kokoro TTS (best local quality, ~82MB model)
+	uv tool install git+https://github.com/nazdridoy/kokoro-tts
 
 
 # MARK: VALIDATION

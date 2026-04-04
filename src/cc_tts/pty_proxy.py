@@ -92,7 +92,7 @@ def run_pty_proxy(
         target=_tts_worker,
         args=(tts_queue,),
         kwargs={"on_speak": on_speak},
-        daemon=True,
+        daemon=False,
     )
     worker.start()
 
