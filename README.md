@@ -2,7 +2,7 @@
 
 > **Status: Prototype** — proof-of-concept for live TTS from Claude Code via PTY proxy. Not production-ready.
 
-[![License](https://img.shields.io/badge/license-Apache--2.0-58f4c2.svg)](LICENSE.md)
+[![License](https://img.shields.io/badge/license-Apache--2.0-58f4c2.svg)](LICENSE)
 ![Version](https://img.shields.io/badge/version-0.1.0-58f4c2.svg)
 [![CodeQL](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/codeql.yaml/badge.svg)](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/codeql.yaml)
 [![CodeFactor](https://www.codefactor.io/repository/github/qte77/cc-tts-plugin-protoype/badge)](https://www.codefactor.io/repository/github/qte77/cc-tts-plugin-protoype)
@@ -94,4 +94,4 @@ claude plugin install cc-tts@local
 
 ## License
 
-[Apache-2.0](LICENSE.md)
+[Apache-2.0](LICENSE)
