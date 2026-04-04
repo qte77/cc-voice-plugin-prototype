@@ -34,7 +34,6 @@
       "Bash(awk:*)",
       "Bash(cat:*)",
       "Bash(find:*)",
-      "Bash(git:push:*)",
       "Bash(grep:*)",
       "Bash(head:*)",
       "Bash(ls:*)",
