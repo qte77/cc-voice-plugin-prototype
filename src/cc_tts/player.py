@@ -6,7 +6,6 @@ import platform
 import shutil
 import subprocess
 
-
 _PLAYERS: list[tuple[str, list[str]]] = [
     ("mpv", ["mpv", "--no-video", "--no-terminal"]),
     ("ffplay", ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet"]),
@@ -36,15 +35,28 @@ def _detect_player(preference: str = "auto") -> tuple[str, list[str]]:
     raise RuntimeError(msg)
 
 
+class NoAudioDeviceError(RuntimeError):
+    """Raised when audio playback fails due to missing audio device."""
+
+
 def play_audio(
     path: str, *, player: str = "auto", blocking: bool = False
 ) -> subprocess.Popen[bytes] | None:
-    """Play an audio file. Returns Popen handle if non-blocking, None if blocking."""
+    """Play an audio file. Returns Popen handle if non-blocking, None if blocking.
+
+    Raises NoAudioDeviceError if playback fails due to missing audio device.
+    """
     _, cmd = _detect_player(player)
     full_cmd = [*cmd, path]
 
     if blocking:
-        subprocess.run(full_cmd, check=True, capture_output=True)
+        result = subprocess.run(full_cmd, capture_output=True)
+        if result.returncode != 0:
+            stderr = result.stderr.decode(errors="replace")
+            if "cannot find card" in stderr or "Unknown PCM" in stderr or "No such file" in stderr:
+                raise NoAudioDeviceError(f"No audio device available. WAV saved at: {path}")
+            msg = f"Playback failed (exit {result.returncode}): {stderr[:200]}"
+            raise RuntimeError(msg)
         return None
 
     return subprocess.Popen(

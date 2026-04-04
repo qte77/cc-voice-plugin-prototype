@@ -7,7 +7,7 @@ import tempfile
 
 from cc_tts.config import TTSConfig, load_config
 from cc_tts.engine import resolve_engine
-from cc_tts.player import play_audio
+from cc_tts.player import NoAudioDeviceError, play_audio
 from cc_tts.preprocess import preprocess
 
 
@@ -23,7 +23,10 @@ def synthesize_and_play(text: str, config: TTSConfig | None = None) -> None:
 
     with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
         engine.synthesize(text, f.name, voice=config.voice, speed=config.speed)
-        play_audio(f.name, player=config.player, blocking=True)
+        try:
+            play_audio(f.name, player=config.player, blocking=True)
+        except NoAudioDeviceError:
+            print(f"No audio device. WAV saved: {f.name}", file=sys.stderr)
 
 
 def main() -> None:

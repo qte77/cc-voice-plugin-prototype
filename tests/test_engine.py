@@ -32,6 +32,15 @@ class TestEspeakEngine:
         assert "-w" in cmd
         assert "hello" in cmd
 
+    @patch("subprocess.run")
+    @patch("shutil.which", return_value="/usr/bin/espeak-ng")
+    def test_synthesize_ignores_piper_voice(self, mock_which: object, mock_run: object) -> None:
+        engine = EspeakEngine()
+        engine.synthesize("hello", "/tmp/out.wav", voice="en_US-amy-medium")
+        cmd = mock_run.call_args[0][0]  # type: ignore[union-attr]
+        assert "en_US-amy-medium" not in cmd
+        assert "en-us" in cmd
+
 
 class TestPiperEngine:
     def test_name(self) -> None:

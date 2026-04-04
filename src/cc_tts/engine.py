@@ -20,6 +20,10 @@ class TTSEngine(Protocol):
     def name(self) -> str: ...
 
 
+_ESPEAK_DEFAULT_VOICE = "en-us"
+_PIPER_VOICE_PREFIX = "en_"
+
+
 class EspeakEngine:
     """espeak-ng engine — lightweight, zero-config fallback."""
 
@@ -38,9 +42,10 @@ class EspeakEngine:
     def synthesize(
         self, text: str, output_path: str, *, voice: str | None = None, speed: float = 1.0
     ) -> None:
-        cmd = [self._cmd(), "-w", output_path]
-        if voice is not None:
-            cmd.extend(["-v", voice])
+        # Ignore Piper voice names (contain underscores like en_US-amy-medium)
+        if voice is not None and "_" in voice:
+            voice = _ESPEAK_DEFAULT_VOICE
+        cmd = [self._cmd(), "-w", output_path, "-v", voice or _ESPEAK_DEFAULT_VOICE]
         wpm = int(175 * speed)
         cmd.extend(["-s", str(wpm)])
         cmd.append(text)
@@ -63,9 +68,12 @@ class PiperEngine:
         voice = voice or "en_US-amy-medium"
         cmd = [
             "piper",
-            "--model", voice,
-            "--output_file", output_path,
-            "--length_scale", str(1.0 / speed),
+            "--model",
+            voice,
+            "--output_file",
+            output_path,
+            "--length_scale",
+            str(1.0 / speed),
         ]
         subprocess.run(cmd, input=text.encode(), check=True, capture_output=True)
 
