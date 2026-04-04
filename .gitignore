@@ -30,7 +30,7 @@
 # git internals (denyWithinAllow drops .git/ prefix)
 /HEAD
 /config
-/hooks
+# /hooks — disabled, conflicts with plugin hooks/ directory
 /objects
 /refs
 # shell dotfiles (cwd instead of $HOME)
