@@ -2,6 +2,13 @@
 
 > **Status: Prototype** — proof-of-concept for live TTS from Claude Code via PTY proxy. Not production-ready.
 
+[![License](https://img.shields.io/badge/license-Apache--2.0-58f4c2.svg)](LICENSE.md)
+![Version](https://img.shields.io/badge/version-0.1.0-58f4c2.svg)
+[![CodeQL](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/codeql.yaml/badge.svg)](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/codeql.yaml)
+[![CodeFactor](https://www.codefactor.io/repository/github/qte77/cc-tts-plugin-protoype/badge)](https://www.codefactor.io/repository/github/qte77/cc-tts-plugin-protoype)
+[![Dependabot](https://img.shields.io/badge/dependabot-enabled-58f4c2.svg?logo=dependabot)](https://github.com/qte77/cc-tts-plugin-protoype/security/dependabot)
+[![Link Checker](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/links-fail-fast.yaml/badge.svg)](https://github.com/qte77/cc-tts-plugin-protoype/actions/workflows/links-fail-fast.yaml)
+
 Text-to-speech output plugin for Claude Code. Speaks Claude's responses aloud using local/OSS TTS engines.
 
 ## Features
@@ -87,4 +94,4 @@ claude plugin install cc-tts@local
 
 ## License
 
-MIT
+[Apache-2.0](LICENSE.md)
