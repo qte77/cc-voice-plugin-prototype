@@ -26,7 +26,7 @@ python -m cc_tts.speak $ARGUMENTS
 
 ## Configuration
 
-Edit `.cc-tts.toml` in project root:
+Edit `.cc-voice.toml` in project root:
 
 ```toml
 engine = "auto"        # "piper" | "espeak" | "auto"

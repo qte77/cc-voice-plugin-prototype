@@ -1,5 +1,5 @@
-# CC-TTS configuration
-# Copy to .cc-tts.toml and adjust as needed.
+# CC-Voice configuration
+# Copy to .cc-voice.toml and adjust as needed.
 # Environment overrides: CC_TTS_ENGINE, CC_TTS_VOICE, CC_TTS_SPEED,
 # CC_TTS_AUTO_READ, CC_TTS_MAX_CHARS, CC_TTS_PLAYER
 
