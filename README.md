@@ -1,4 +1,6 @@
-# cc-tts
+# cc-tts (prototype)
+
+> **Status: Prototype** — proof-of-concept for live TTS from Claude Code via PTY proxy. Not production-ready.
 
 Text-to-speech output plugin for Claude Code. Speaks Claude's responses aloud using local/OSS TTS engines.
 
