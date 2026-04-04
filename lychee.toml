@@ -1,3 +1,1 @@
 exclude_path = [".venv", ".pytest_cache", ".ruff_cache"]
-# TODO: remove after first merge to main — file exists on branch but not main yet
-exclude = ["github.com/qte77/cc-tts-plugin-protoype/blob/main/.github/dependabot"]
