@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Protocol
 
@@ -54,7 +55,7 @@ class EspeakEngine:
 
 _PIPER_MODEL_DIRS = [
     Path.home() / ".local" / "share" / "piper-models",
-    Path("/tmp/piper-models"),  # noqa: S108
+    Path(tempfile.gettempdir()) / "piper-models",
 ]
 
 _PIPER_HF_BASE = "https://huggingface.co/rhasspy/piper-voices/resolve/main"
@@ -102,8 +103,8 @@ class PiperEngine:
         dest_dir.mkdir(parents=True, exist_ok=True)
         dest = dest_dir / onnx_name
         dest_json = dest_dir / f"{onnx_name}.json"
-        urllib.request.urlretrieve(url, dest)  # noqa: S310
-        urllib.request.urlretrieve(json_url, dest_json)  # noqa: S310
+        urllib.request.urlretrieve(url, dest)
+        urllib.request.urlretrieve(json_url, dest_json)
         return str(dest)
 
     def synthesize(
@@ -148,7 +149,7 @@ class KokoroEngine:
                 import urllib.request
 
                 url = f"{_KOKORO_RELEASE_BASE}/{fname}"
-                urllib.request.urlretrieve(url, dest)  # noqa: S310
+                urllib.request.urlretrieve(url, dest)
         return model_dir
 
     def synthesize(
