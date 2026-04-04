@@ -46,7 +46,10 @@ def _set_winsize(fd: int, winsize: bytes) -> None:
 
 
 def _spawn_child(args: list[str], master_fd: int, slave_fd: int) -> int:
-    """Fork and exec the child process under the slave PTY. Returns child PID."""
+    """Fork and exec the child process under the slave PTY. Returns child PID.
+
+    FIXME codefactor.io: extracted from run_pty_proxy to reduce complexity from 16 to <10.
+    """
     pid = os.fork()
     if pid == 0:
         os.close(master_fd)
@@ -56,12 +59,15 @@ def _spawn_child(args: list[str], master_fd: int, slave_fd: int) -> int:
         os.dup2(slave_fd, 2)
         if slave_fd > 2:
             os.close(slave_fd)
-        os.execvp(args[0], args)  # noqa: S606
+        os.execvp(args[0], args)  # noqa: S606  # FIXME codefactor.io B606: PTY must exec child directly
     return pid
 
 
 def _setup_terminal(master_fd: int) -> tuple[int, bool, Any]:
-    """Configure stdin raw mode if TTY. Returns (stdin_fd, is_tty, old_attrs)."""
+    """Configure stdin raw mode if TTY. Returns (stdin_fd, is_tty, old_attrs).
+
+    FIXME codefactor.io: extracted from run_pty_proxy to reduce complexity.
+    """
     try:
         stdin_fd = sys.stdin.fileno()
         is_tty = os.isatty(stdin_fd)
@@ -84,7 +90,10 @@ def _setup_terminal(master_fd: int) -> tuple[int, bool, Any]:
 
 
 def _proxy_loop(master_fd: int, stdin_fd: int, is_tty: bool, stream_filter: StreamFilter) -> None:
-    """Select loop proxying I/O between terminal and child PTY."""
+    """Select loop proxying I/O between terminal and child PTY.
+
+    FIXME codefactor.io: extracted from run_pty_proxy to reduce complexity.
+    """
     fds = [stdin_fd, master_fd] if is_tty else [master_fd]
     while True:
         try:
