@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-06
+
+### Added
+- feat(stt): live `/listen` pipeline — mic capture → VAD buffering → Moonshine/Vosk transcription → PTY injection
+- feat(stt): file transcription mode via `transcribe_file()` 
+- feat(stt): `__main__.py` dispatcher routing to listen/transcribe/hook modes
+- test: 9 listen pipeline tests (TestListenLive, TestTranscribeFile, TestMainDispatch)
+- test: 19 plugin config validation tests (plugin.json schema, marketplace source resolution)
+
+### Fixed
+- fix: plugin discovery — changed marketplace source from relative path to github source type (#7)
+- fix: suppress CodeFactor B607/B108 warnings (#11)
+
 ## [0.3.0] - 2026-04-04
 
 ### Added
