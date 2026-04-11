@@ -1,14 +1,66 @@
-"""Tests for cc_vlm.engine — VLMEngine Protocol + OllamaVLMEngine + resolver."""
+"""Tests for cc_vlm.engine — VLMEngine Protocol + LlamaCppVLMEngine + resolver.
+
+Mocks llama_cpp and llama_cpp.llama_chat_format via sys.modules so the test
+suite runs without the llama-cpp-python package actually being installed.
+This matches the shipped architecture (Python dep is intentionally outside
+the [see] extras — users install the hardware-specific variant themselves).
+"""
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import httpx
 import pytest
 
-from cc_vlm.engine import OllamaVLMEngine, VLMEngine, resolve_vlm_engine
+from cc_vlm.engine import LlamaCppVLMEngine, VLMEngine, resolve_vlm_engine
+
+
+@pytest.fixture
+def mock_llama_cpp() -> tuple[MagicMock, MagicMock, MagicMock]:
+    """Install fake llama_cpp / llama_chat_format modules into sys.modules.
+
+    Returns: (fake_llama_cpp_module, fake_llama_chat_format_module,
+              mock_llama_instance_that_describe_will_use)
+    """
+    fake_llama_module = MagicMock()
+    fake_chat_format_module = MagicMock()
+
+    # Create a default mock Llama instance for describe() calls
+    mock_llama_instance = MagicMock()
+    mock_llama_instance.create_chat_completion.return_value = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "A terminal window showing git status.",
+                }
+            }
+        ]
+    }
+    fake_llama_module.Llama = MagicMock(return_value=mock_llama_instance)
+
+    # Chat handler classes — each is itself a callable returning a mock
+    fake_chat_format_module.Qwen25VLChatHandler = MagicMock(return_value=MagicMock())
+    fake_chat_format_module.Llava15ChatHandler = MagicMock(return_value=MagicMock())
+
+    saved_llama = sys.modules.get("llama_cpp")
+    saved_chat = sys.modules.get("llama_cpp.llama_chat_format")
+    sys.modules["llama_cpp"] = fake_llama_module
+    sys.modules["llama_cpp.llama_chat_format"] = fake_chat_format_module
+
+    yield fake_llama_module, fake_chat_format_module, mock_llama_instance
+
+    # Teardown: restore original sys.modules state
+    if saved_llama is None:
+        sys.modules.pop("llama_cpp", None)
+    else:
+        sys.modules["llama_cpp"] = saved_llama
+    if saved_chat is None:
+        sys.modules.pop("llama_cpp.llama_chat_format", None)
+    else:
+        sys.modules["llama_cpp.llama_chat_format"] = saved_chat
 
 
 class TestVLMEngineProtocol:
@@ -34,113 +86,286 @@ class TestVLMEngineProtocol:
         assert engine.describe(img, "describe") == "fake description of x.jpg"
 
 
-class TestOllamaVLMEngine:
+class TestLlamaCppVLMEngineDefaults:
     def test_name(self) -> None:
-        assert OllamaVLMEngine().name == "ollama"
+        assert LlamaCppVLMEngine().name == "llamacpp"
 
     def test_defaults(self) -> None:
-        engine = OllamaVLMEngine()
-        assert engine.endpoint == "http://localhost:11434"
-        assert engine.model == "qwen2.5vl:3b"
-        assert engine.timeout == 60.0
+        engine = LlamaCppVLMEngine()
+        assert engine.model_path == ""
+        assert engine.mmproj_path == ""
+        assert engine.handler_name == "qwen2.5vl"
+        assert engine.n_ctx == 4096
+        assert engine.n_gpu_layers == 0
+        assert engine.max_tokens == 256
+        assert engine._llama is None
 
-    def test_strips_trailing_slash_from_endpoint(self) -> None:
-        engine = OllamaVLMEngine(endpoint="http://localhost:11434/")
-        assert engine.endpoint == "http://localhost:11434"
 
-    @patch("cc_vlm.engine.httpx.get")
-    def test_available_when_daemon_responds(self, mock_get: MagicMock) -> None:
-        mock_get.return_value = MagicMock(status_code=200)
-        assert OllamaVLMEngine().available() is True
-        mock_get.assert_called_once()
-        assert "/api/tags" in mock_get.call_args[0][0]
+class TestLlamaCppVLMEngineAvailable:
+    def test_unavailable_when_llama_cpp_missing(self, tmp_path: Path) -> None:
+        """Without llama_cpp installed, available() returns False."""
+        # Ensure llama_cpp is NOT in sys.modules for this test
+        saved = sys.modules.pop("llama_cpp", None)
+        try:
+            model = tmp_path / "m.gguf"
+            mmproj = tmp_path / "mm.gguf"
+            model.write_bytes(b"x")
+            mmproj.write_bytes(b"x")
+            engine = LlamaCppVLMEngine(model_path=str(model), mmproj_path=str(mmproj))
+            assert engine.available() is False
+        finally:
+            if saved is not None:
+                sys.modules["llama_cpp"] = saved
 
-    @patch("cc_vlm.engine.httpx.get")
-    def test_unavailable_when_daemon_down(self, mock_get: MagicMock) -> None:
-        mock_get.side_effect = httpx.ConnectError("refused")
-        assert OllamaVLMEngine().available() is False
+    def test_unavailable_when_model_path_empty(
+        self, mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock]
+    ) -> None:
+        engine = LlamaCppVLMEngine(model_path="", mmproj_path="/tmp/mm.gguf")
+        assert engine.available() is False
 
-    @patch("cc_vlm.engine.httpx.get")
-    def test_unavailable_when_non_200(self, mock_get: MagicMock) -> None:
-        mock_get.return_value = MagicMock(status_code=500)
-        assert OllamaVLMEngine().available() is False
+    def test_unavailable_when_model_path_missing(
+        self,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> None:
+        mmproj = tmp_path / "mm.gguf"
+        mmproj.write_bytes(b"x")
+        engine = LlamaCppVLMEngine(
+            model_path=str(tmp_path / "nonexistent.gguf"),
+            mmproj_path=str(mmproj),
+        )
+        assert engine.available() is False
 
-    @patch("cc_vlm.engine.httpx.post")
-    def test_describe_sends_base64_image(self, mock_post: MagicMock, tmp_path: Path) -> None:
-        img_path = tmp_path / "test.jpg"
-        img_path.write_bytes(b"\xff\xd8\xff\xe0fake-jpeg-bytes")
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"response": "A terminal window."}
-        mock_response.raise_for_status.return_value = None
-        mock_post.return_value = mock_response
+    def test_unavailable_when_mmproj_path_missing(
+        self,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> None:
+        model = tmp_path / "m.gguf"
+        model.write_bytes(b"x")
+        engine = LlamaCppVLMEngine(
+            model_path=str(model),
+            mmproj_path=str(tmp_path / "nonexistent.gguf"),
+        )
+        assert engine.available() is False
 
-        engine = OllamaVLMEngine()
-        result = engine.describe(img_path, "Describe the screen.")
+    def test_unavailable_when_handler_unknown(
+        self,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> None:
+        model = tmp_path / "m.gguf"
+        mmproj = tmp_path / "mm.gguf"
+        model.write_bytes(b"x")
+        mmproj.write_bytes(b"x")
+        engine = LlamaCppVLMEngine(
+            model_path=str(model),
+            mmproj_path=str(mmproj),
+            handler_name="nonexistent-handler",
+        )
+        assert engine.available() is False
 
-        assert result == "A terminal window."
-        mock_post.assert_called_once()
-        # Verify payload structure
-        call_kwargs = mock_post.call_args.kwargs
-        payload = call_kwargs["json"]
-        assert payload["model"] == "qwen2.5vl:3b"
-        assert payload["prompt"] == "Describe the screen."
-        assert payload["stream"] is False
-        assert isinstance(payload["images"], list)
-        assert len(payload["images"]) == 1
-        # Should be base64 of the file bytes
-        import base64
+    def test_available_when_all_present(
+        self,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> None:
+        model = tmp_path / "m.gguf"
+        mmproj = tmp_path / "mm.gguf"
+        model.write_bytes(b"x")
+        mmproj.write_bytes(b"x")
+        engine = LlamaCppVLMEngine(model_path=str(model), mmproj_path=str(mmproj))
+        assert engine.available() is True
 
-        expected_b64 = base64.b64encode(img_path.read_bytes()).decode("ascii")
-        assert payload["images"][0] == expected_b64
 
-    @patch("cc_vlm.engine.httpx.post")
-    def test_describe_strips_whitespace(self, mock_post: MagicMock, tmp_path: Path) -> None:
-        img_path = tmp_path / "x.jpg"
-        img_path.write_bytes(b"x")
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"response": "  trimmed.  \n"}
-        mock_response.raise_for_status.return_value = None
-        mock_post.return_value = mock_response
+class TestLlamaCppVLMEngineDescribe:
+    @pytest.fixture
+    def configured_engine(
+        self,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> LlamaCppVLMEngine:
+        model = tmp_path / "m.gguf"
+        mmproj = tmp_path / "mm.gguf"
+        model.write_bytes(b"x")
+        mmproj.write_bytes(b"x")
+        return LlamaCppVLMEngine(model_path=str(model), mmproj_path=str(mmproj))
 
-        result = OllamaVLMEngine().describe(img_path, "prompt")
+    def test_describe_returns_content(
+        self,
+        configured_engine: LlamaCppVLMEngine,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> None:
+        img = tmp_path / "screen.jpg"
+        img.write_bytes(b"\xff\xd8fake")
+
+        result = configured_engine.describe(img, "Describe the screen.")
+
+        assert result == "A terminal window showing git status."
+
+    def test_describe_loads_model_lazily_once(
+        self,
+        configured_engine: LlamaCppVLMEngine,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> None:
+        fake_module, _, _ = mock_llama_cpp
+        img = tmp_path / "a.jpg"
+        img.write_bytes(b"x")
+
+        # First call triggers model load
+        configured_engine.describe(img, "prompt 1")
+        assert fake_module.Llama.call_count == 1
+
+        # Second call reuses loaded model
+        configured_engine.describe(img, "prompt 2")
+        assert fake_module.Llama.call_count == 1  # unchanged
+
+    def test_describe_passes_correct_llama_kwargs(
+        self,
+        configured_engine: LlamaCppVLMEngine,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> None:
+        fake_module, fake_cf, _ = mock_llama_cpp
+        img = tmp_path / "a.jpg"
+        img.write_bytes(b"x")
+
+        configured_engine.describe(img, "prompt")
+
+        # Llama() should receive model_path, chat_handler, n_ctx, n_gpu_layers, verbose=False
+        call_kwargs = fake_module.Llama.call_args.kwargs
+        assert call_kwargs["model_path"] == configured_engine.model_path
+        assert call_kwargs["n_ctx"] == 4096
+        assert call_kwargs["n_gpu_layers"] == 0
+        assert call_kwargs["verbose"] is False
+        assert "chat_handler" in call_kwargs
+
+    def test_describe_messages_have_image_url(
+        self,
+        configured_engine: LlamaCppVLMEngine,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> None:
+        _, _, mock_instance = mock_llama_cpp
+        img = tmp_path / "test.jpg"
+        img.write_bytes(b"x")
+
+        configured_engine.describe(img, "what is this")
+
+        call_args = mock_instance.create_chat_completion.call_args
+        messages = call_args.kwargs["messages"]
+        assert len(messages) == 1
+        content = messages[0]["content"]
+        # Multipart content: [text, image_url]
+        assert any(
+            item.get("type") == "text" and item.get("text") == "what is this" for item in content
+        )
+        image_items = [item for item in content if item.get("type") == "image_url"]
+        assert len(image_items) == 1
+        url = image_items[0]["image_url"]["url"]
+        assert url.startswith("file://")
+        assert str(img.absolute()) in url
+
+    def test_describe_strips_whitespace(
+        self,
+        configured_engine: LlamaCppVLMEngine,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> None:
+        _, _, mock_instance = mock_llama_cpp
+        mock_instance.create_chat_completion.return_value = {
+            "choices": [{"message": {"content": "  trimmed.  \n"}}]
+        }
+        img = tmp_path / "x.jpg"
+        img.write_bytes(b"x")
+
+        result = configured_engine.describe(img, "prompt")
         assert result == "trimmed."
 
-    @patch("cc_vlm.engine.httpx.post")
-    def test_describe_raises_on_missing_response_field(
-        self, mock_post: MagicMock, tmp_path: Path
+    def test_describe_raises_on_no_choices(
+        self,
+        configured_engine: LlamaCppVLMEngine,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
     ) -> None:
-        img_path = tmp_path / "x.jpg"
-        img_path.write_bytes(b"x")
-        mock_response = MagicMock()
-        mock_response.json.return_value = {"error": "model not loaded"}
-        mock_response.raise_for_status.return_value = None
-        mock_post.return_value = mock_response
+        _, _, mock_instance = mock_llama_cpp
+        mock_instance.create_chat_completion.return_value = {"choices": []}
+        img = tmp_path / "x.jpg"
+        img.write_bytes(b"x")
 
-        with pytest.raises(RuntimeError, match="missing 'response' field"):
-            OllamaVLMEngine().describe(img_path, "prompt")
+        with pytest.raises(RuntimeError, match="no choices"):
+            configured_engine.describe(img, "prompt")
+
+    def test_describe_raises_on_unexpected_content_shape(
+        self,
+        configured_engine: LlamaCppVLMEngine,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> None:
+        _, _, mock_instance = mock_llama_cpp
+        mock_instance.create_chat_completion.return_value = {
+            "choices": [{"message": {"content": ["list", "not", "string"]}}]
+        }
+        img = tmp_path / "x.jpg"
+        img.write_bytes(b"x")
+
+        with pytest.raises(RuntimeError, match="unexpected content shape"):
+            configured_engine.describe(img, "prompt")
 
 
 class TestResolveVLMEngine:
-    @patch.object(OllamaVLMEngine, "available", return_value=True)
-    def test_auto_returns_ollama_when_available(self, mock_available: MagicMock) -> None:
-        engine = resolve_vlm_engine("auto")
-        assert isinstance(engine, OllamaVLMEngine)
+    def test_auto_returns_llamacpp_when_available(
+        self,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> None:
+        model = tmp_path / "m.gguf"
+        mmproj = tmp_path / "mm.gguf"
+        model.write_bytes(b"x")
+        mmproj.write_bytes(b"x")
+        engine = resolve_vlm_engine("auto", model_path=str(model), mmproj_path=str(mmproj))
+        assert isinstance(engine, LlamaCppVLMEngine)
 
-    @patch.object(OllamaVLMEngine, "available", return_value=False)
-    def test_auto_raises_when_nothing_available(self, mock_available: MagicMock) -> None:
-        with pytest.raises(RuntimeError, match="No VLM engine running"):
+    def test_auto_raises_when_nothing_available(
+        self,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+    ) -> None:
+        with pytest.raises(RuntimeError, match="No VLM engine available"):
             resolve_vlm_engine("auto")
 
-    @patch.object(OllamaVLMEngine, "available", return_value=True)
-    def test_explicit_name(self, mock_available: MagicMock) -> None:
-        engine = resolve_vlm_engine("ollama")
-        assert isinstance(engine, OllamaVLMEngine)
+    def test_explicit_llamacpp_name(
+        self,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+        tmp_path: Path,
+    ) -> None:
+        model = tmp_path / "m.gguf"
+        mmproj = tmp_path / "mm.gguf"
+        model.write_bytes(b"x")
+        mmproj.write_bytes(b"x")
+        engine = resolve_vlm_engine("llamacpp", model_path=str(model), mmproj_path=str(mmproj))
+        assert isinstance(engine, LlamaCppVLMEngine)
 
     def test_unknown_engine_name_raises(self) -> None:
         with pytest.raises(ValueError, match="Unknown engine"):
             resolve_vlm_engine("nonexistent")
 
-    @patch.object(OllamaVLMEngine, "available", return_value=False)
-    def test_explicit_engine_not_running_raises(self, mock_available: MagicMock) -> None:
-        with pytest.raises(RuntimeError, match="not running"):
-            resolve_vlm_engine("ollama")
+    def test_explicit_engine_not_available_raises_with_helpful_message(
+        self,
+        mock_llama_cpp: tuple[MagicMock, MagicMock, MagicMock],
+    ) -> None:
+        with pytest.raises(RuntimeError, match="model_path"):
+            resolve_vlm_engine("llamacpp")
+
+    def test_explicit_engine_raises_when_llama_cpp_not_installed(
+        self,
+    ) -> None:
+        """Diagnostic message should point users at `make setup_see`."""
+        saved = sys.modules.pop("llama_cpp", None)
+        try:
+            with pytest.raises(RuntimeError, match="llama-cpp-python not installed"):
+                resolve_vlm_engine("llamacpp")
+        finally:
+            if saved is not None:
+                sys.modules["llama_cpp"] = saved

@@ -1,4 +1,4 @@
-"""cc_vlm CLI entry point — capture screen and describe via local VLM.
+"""cc_vlm CLI entry point — capture screen and describe via in-process VLM.
 
 Usage:
     python -m cc_vlm                         # capture, describe with config template
@@ -30,7 +30,7 @@ from cc_vlm.templates import PROMPT_TEMPLATES, get_template
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="cc_vlm",
-        description="Capture and describe screen content via a local VLM.",
+        description="Capture and describe screen content via an in-process VLM.",
     )
     parser.add_argument(
         "--template",
@@ -81,7 +81,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     try:
-        engine = resolve_vlm_engine(config.engine)
+        engine = resolve_vlm_engine(
+            config.engine,
+            model_path=config.model_path,
+            mmproj_path=config.mmproj_path,
+            handler_name=config.handler_name,
+            n_ctx=config.n_ctx,
+            n_gpu_layers=config.n_gpu_layers,
+            max_tokens=config.max_tokens,
+        )
     except (RuntimeError, ValueError) as exc:
         print(f"cc_vlm: {exc}", file=sys.stderr)
         return 1

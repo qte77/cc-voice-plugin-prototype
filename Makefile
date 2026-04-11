@@ -33,13 +33,29 @@ setup_kokoro: ## Install Kokoro TTS (best local quality, ~82MB model)
 setup_stt: ## Install STT deps (sounddevice + default engine)
 	uv sync --extra stt
 
-setup_see: ## Install /see deps (mss, Pillow, httpx, blake3). Requires Ollama running separately.
+setup_see: ## Install /see deps (mss, Pillow, blake3). llama-cpp-python is a separate manual install — see output.
 	uv sync --extra see
 	@echo ""
-	@echo "  /see deps installed. Ollama is required separately:"
-	@echo "    curl -fsSL https://ollama.com/install.sh | sh"
-	@echo "    ollama pull qwen2.5vl:3b"
-	@echo "    ollama serve"
+	@echo "  /see scaffolding deps installed. llama-cpp-python is NOT in [see]"
+	@echo "  extras because the correct wheel depends on your hardware. Install"
+	@echo "  ONE of the following matching your platform:"
+	@echo ""
+	@echo "    CPU only (any OS):"
+	@echo "      uv pip install 'llama-cpp-python' \\"
+	@echo "        --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu"
+	@echo ""
+	@echo "    CUDA 12.4 (NVIDIA):"
+	@echo "      uv pip install 'llama-cpp-python' \\"
+	@echo "        --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124"
+	@echo ""
+	@echo "    Apple Silicon (Metal):"
+	@echo "      CMAKE_ARGS='-DLLAMA_METAL=on' uv pip install llama-cpp-python"
+	@echo ""
+	@echo "  Then download a Qwen2.5-VL GGUF + mmproj, e.g."
+	@echo "    https://huggingface.co/bartowski/Qwen2.5-VL-3B-Instruct-GGUF"
+	@echo "  and set in .cc-voice.toml [vlm]:"
+	@echo "    model_path = '/path/to/qwen2.5-vl-3b-instruct-q4_k_m.gguf'"
+	@echo "    mmproj_path = '/path/to/mmproj-qwen2.5-vl-3b-instruct-f16.gguf'"
 
 setup_all: setup_dev setup_espeak setup_piper setup_kokoro setup_stt setup_see ## Happy path: dev + all TTS + STT + /see
 	@echo ""
