@@ -9,9 +9,9 @@ dependencies = []
 
 [project.optional-dependencies]
 piper = ["piper-tts>=1.2.0"]
-edge = ["edge-tts>=6.1.0"]
+edge = ["edge-tts>=7.2.8"]
 stt = ["sounddevice>=0.5.0"]
-all = ["piper-tts>=1.2.0", "edge-tts>=6.1.0", "sounddevice>=0.5.0"]
+all = ["piper-tts>=1.2.0", "edge-tts>=7.2.8", "sounddevice>=0.5.0"]
 dev = ["ruff>=0.9.0", "pyright>=1.1.390", "bump-my-version>=0.29.0"]
 test = ["pytest>=8.0", "pytest-cov>=6.0"]
 
