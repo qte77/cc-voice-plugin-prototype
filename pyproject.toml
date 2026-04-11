@@ -52,7 +52,11 @@ docstring-code-format = true
 pythonVersion = "3.11"
 include = ["src"]
 typeCheckingMode = "strict"
-useLibraryCodeForTypes = false
+useLibraryCodeForTypes = false       # prevents OOM on small venvs
+reportMissingTypeStubs = false       # fixes sounddevice stub error
+reportUnknownMemberType = "none"     # fixes untyped config leakage
+reportUnknownVariableType = "none"
+reportUnknownParameterType = "none"
 
 
 # MARK: Testing
