@@ -7,7 +7,7 @@ import threading
 import wave
 from pathlib import Path
 
-from cc_stt.config import load_stt_config
+from cc_stt.config import STTConfig, load_stt_config
 from cc_stt.engine import resolve_stt_engine
 from cc_stt.mic import MicCapture
 from cc_stt.pty_input import inject_text
@@ -24,7 +24,7 @@ def _write_wav(pcm_bytes: bytes, path: str, *, sample_rate: int = 16000) -> None
 
 
 def listen_live(
-    config: object = None,
+    config: STTConfig | None = None,
     *,
     pty_fd: int | None = None,
     stop_event: threading.Event | None = None,
@@ -60,7 +60,7 @@ def listen_live(
         buffer.flush()
 
 
-def transcribe_file(path: str, config: object = None) -> str:
+def transcribe_file(path: str, config: STTConfig | None = None) -> str:
     """File -> engine -> text."""
     if not Path(path).is_file():
         msg = f"Audio file not found: {path}"
