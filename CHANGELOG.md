@@ -2,6 +2,36 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-11
+
+### Added
+- feat(stt): live `/listen` pipeline — mic capture → VAD buffering → Moonshine/Vosk transcription → PTY injection (#14)
+- feat(stt): file transcription mode via `transcribe_file()` (#14)
+- feat(stt): `__main__.py` dispatcher routing to listen/transcribe/hook modes (#14)
+- docs(vlm): ADR-0001 screen-sharing architecture for `/see` — three tiers (CC-native vision, local VLM, hybrid) (#18)
+- docs(vlm): `/see` skill stub (status: research) (#18)
+- build(make): `setup_all` happy-path target installing dev + TTS engines + STT deps (#19)
+- build(make): `setup_stt` target using existing `[stt]` extras group (#19)
+- build(make): `clean` target removing `.venv` + caches (#19)
+- test: 9 listen pipeline tests — TestListenLive, TestTranscribeFile, TestMainDispatch (#14)
+- test: 19 plugin config validation tests — plugin.json schema, marketplace source resolution (#13)
+
+### Changed
+- fix(types): adopt pyright strict + suppress-unknowns config — resolves untyped-library leakage from sounddevice / pydantic-settings; ported from sibling project Agents-eval (#19)
+- fix(types): narrow `listen.py` config parameter to `STTConfig | None` instead of `object` (#14)
+- chore(build): Makefile uses `uv sync` only — dropped `uv pip install` rule violations in `setup` and `setup_dev` (#19)
+- chore(build): rename `setup_tts` → `setup_espeak` for accuracy (it installs espeak-ng + mpv, not TTS generically) (#19)
+- chore(build): `test_coverage` now reports both `cc_tts` and `cc_stt` — previously silently dropped `cc_stt` (#19)
+- chore(build): `wrap` help text now warns about bwrap sandbox deadlock per AGENT_LEARNINGS.md (#19)
+- chore(gitignore): exclude `.coverage` artifact (#25)
+- style: ruff format drift cleanup across 5 files (src/cc_stt/mic.py, test_plugin_config.py, test_stt_config.py, test_stt_engine.py, test_stt_mic.py) (#25)
+- build(deps-dev): bump edge-tts ≥6.1.0 → ≥7.2.8 (#20)
+- build(deps-dev): bump bump-my-version ≥0.29.0 → ≥1.3.0 (#21)
+
+### Fixed
+- fix: plugin discovery — changed marketplace source from relative path to github source type (#7)
+- fix: suppress CodeFactor B607/B108 warnings (#11)
+
 ## [0.3.0] - 2026-04-04
 
 ### Added
