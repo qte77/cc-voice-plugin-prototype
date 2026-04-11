@@ -110,9 +110,7 @@ class TestResolveSTTEngine:
 
     @patch(
         "shutil.which",
-        side_effect=lambda x: "/usr/bin/vosk-transcriber"
-        if x == "vosk-transcriber"
-        else None,
+        side_effect=lambda x: "/usr/bin/vosk-transcriber" if x == "vosk-transcriber" else None,
     )
     def test_auto_falls_back_to_vosk(self, mock_which: object) -> None:
         engine = resolve_stt_engine("auto")

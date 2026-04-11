@@ -90,23 +90,17 @@ class TestMarketplaceJsonSchema:
 
 
 class TestMarketplacePluginEntries:
-    def test_each_plugin_has_name_and_source(
-        self, marketplace_data: dict[str, object]
-    ) -> None:
+    def test_each_plugin_has_name_and_source(self, marketplace_data: dict[str, object]) -> None:
         for entry in marketplace_data["plugins"]:  # type: ignore[union-attr]
             assert "name" in entry, f"plugin entry missing 'name': {entry}"
             assert "source" in entry, f"plugin entry missing 'source': {entry}"
 
-    def test_plugin_names_kebab_case(
-        self, marketplace_data: dict[str, object]
-    ) -> None:
+    def test_plugin_names_kebab_case(self, marketplace_data: dict[str, object]) -> None:
         for entry in marketplace_data["plugins"]:  # type: ignore[union-attr]
             name = entry["name"]
             assert KEBAB_CASE_RE.match(name), f"plugin name '{name}' must be kebab-case"
 
-    def test_no_duplicate_plugin_names(
-        self, marketplace_data: dict[str, object]
-    ) -> None:
+    def test_no_duplicate_plugin_names(self, marketplace_data: dict[str, object]) -> None:
         names = [e["name"] for e in marketplace_data["plugins"]]  # type: ignore[union-attr]
         assert len(names) == len(set(names)), f"duplicate plugin names: {names}"
 
@@ -117,9 +111,7 @@ class TestMarketplacePluginEntries:
 class TestPluginSourceResolution:
     """Verify plugin sources resolve to valid plugin directories."""
 
-    def test_relative_source_resolves(
-        self, marketplace_data: dict[str, object]
-    ) -> None:
+    def test_relative_source_resolves(self, marketplace_data: dict[str, object]) -> None:
         for entry in marketplace_data["plugins"]:  # type: ignore[union-attr]
             source = entry["source"]
             if isinstance(source, str) and source.startswith("./"):
@@ -128,9 +120,7 @@ class TestPluginSourceResolution:
                     f"relative source '{source}' does not resolve to a directory"
                 )
 
-    def test_relative_source_has_plugin_json(
-        self, marketplace_data: dict[str, object]
-    ) -> None:
+    def test_relative_source_has_plugin_json(self, marketplace_data: dict[str, object]) -> None:
         for entry in marketplace_data["plugins"]:  # type: ignore[union-attr]
             source = entry["source"]
             if isinstance(source, str) and source.startswith("./"):
@@ -139,9 +129,7 @@ class TestPluginSourceResolution:
                     f"relative source '{source}' missing .claude-plugin/plugin.json"
                 )
 
-    def test_relative_source_not_git_submodule(
-        self, marketplace_data: dict[str, object]
-    ) -> None:
+    def test_relative_source_not_git_submodule(self, marketplace_data: dict[str, object]) -> None:
         """Git submodules are NOT initialized during CC marketplace clone.
 
         If a plugin source is a relative path to a git submodule, the
@@ -158,16 +146,13 @@ class TestPluginSourceResolution:
                     f"Use {{'source': 'github', 'repo': '...'}} instead."
                 )
 
-    def test_self_referential_source_resolves(
-        self, marketplace_data: dict[str, object]
-    ) -> None:
+    def test_self_referential_source_resolves(self, marketplace_data: dict[str, object]) -> None:
         """Source './' means the repo root IS the plugin."""
         for entry in marketplace_data["plugins"]:  # type: ignore[union-attr]
             source = entry["source"]
             if source == "./":
                 assert PLUGIN_JSON.is_file(), (
-                    "self-referential source './' requires .claude-plugin/plugin.json "
-                    "at repo root"
+                    "self-referential source './' requires .claude-plugin/plugin.json at repo root"
                 )
 
 

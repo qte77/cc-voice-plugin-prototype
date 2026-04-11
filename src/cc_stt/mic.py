@@ -69,9 +69,7 @@ class MicCapture:
     def is_active(self) -> bool:
         return self._stream is not None
 
-    def _callback(
-        self, indata: Any, frames: int, time: Any, status: Any
-    ) -> None:
+    def _callback(self, indata: Any, frames: int, time: Any, status: Any) -> None:
         """Sounddevice callback — converts numpy array to bytes and delivers."""
         if self._on_audio is not None:
             self._on_audio(indata.tobytes())
@@ -80,9 +78,7 @@ class MicCapture:
         """Start capturing audio from microphone."""
         if self._stream is not None:
             return
-        self._stream = _open_stream(
-            self.device, self.sample_rate, self.channels, self._callback
-        )
+        self._stream = _open_stream(self.device, self.sample_rate, self.channels, self._callback)
 
     def stop(self) -> None:
         """Stop capturing audio."""

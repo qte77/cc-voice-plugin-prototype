@@ -35,9 +35,7 @@ class TestLoadSTTConfigFromToml:
         assert config.engine == "moonshine"
         assert config.language == "de"
 
-    def test_returns_defaults_when_no_toml(
-        self, tmp_path: Path, monkeypatch: object
-    ) -> None:
+    def test_returns_defaults_when_no_toml(self, tmp_path: Path, monkeypatch: object) -> None:
         monkeypatch.chdir(tmp_path)  # type: ignore[union-attr]
         config = load_stt_config()
         assert config.engine == "auto"
@@ -52,9 +50,7 @@ class TestLoadSTTConfigFromToml:
         config = load_stt_config()
         assert config.engine == "auto"
 
-    def test_falls_back_to_cc_tts_toml(
-        self, tmp_path: Path, monkeypatch: object
-    ) -> None:
+    def test_falls_back_to_cc_tts_toml(self, tmp_path: Path, monkeypatch: object) -> None:
         toml_content = b'[stt]\nengine = "vosk"\n'
         config_file = tmp_path / ".cc-tts.toml"
         config_file.write_bytes(toml_content)
@@ -64,9 +60,7 @@ class TestLoadSTTConfigFromToml:
 
 
 class TestSTTEnvOverrides:
-    def test_env_overrides_toml(
-        self, tmp_path: Path, monkeypatch: object
-    ) -> None:
+    def test_env_overrides_toml(self, tmp_path: Path, monkeypatch: object) -> None:
         toml_content = b'[stt]\nengine = "moonshine"\n'
         config_file = tmp_path / ".cc-voice.toml"
         config_file.write_bytes(toml_content)
@@ -75,17 +69,13 @@ class TestSTTEnvOverrides:
         config = load_stt_config()
         assert config.engine == "vosk"
 
-    def test_bool_env_parsing(
-        self, tmp_path: Path, monkeypatch: object
-    ) -> None:
+    def test_bool_env_parsing(self, tmp_path: Path, monkeypatch: object) -> None:
         monkeypatch.chdir(tmp_path)  # type: ignore[union-attr]
         monkeypatch.setenv("CC_STT_AUTO_LISTEN", "true")  # type: ignore[union-attr]
         config = load_stt_config()
         assert config.auto_listen is True
 
-    def test_string_env_override(
-        self, tmp_path: Path, monkeypatch: object
-    ) -> None:
+    def test_string_env_override(self, tmp_path: Path, monkeypatch: object) -> None:
         monkeypatch.chdir(tmp_path)  # type: ignore[union-attr]
         monkeypatch.setenv("CC_STT_MIC_DEVICE", "hw:1,0")  # type: ignore[union-attr]
         config = load_stt_config()
