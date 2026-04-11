@@ -1,6 +1,6 @@
 .SILENT:
 .ONESHELL:
-.PHONY: setup setup_dev setup_espeak setup_piper setup_kokoro setup_stt setup_see setup_all clean validate lint_fix quick_validate lint_src lint_tests lint_md lint_links type_check test test_coverage speak wrap bump_patch bump_minor bump_major help
+.PHONY: setup setup_dev setup_espeak setup_piper setup_kokoro setup_stt setup_see setup_all clean clean_models clean_see_artifacts clean_all validate lint_fix quick_validate lint_src lint_tests lint_md lint_links type_check test test_coverage speak wrap listen see see_file see_save_only smoke_imports smoke_cli smoke plugin_install_local plugin_uninstall plugin_list plugin_validate run_cc bump_patch bump_minor bump_major help
 .DEFAULT_GOAL := help
 
 # -- quiet mode (default: quiet; set VERBOSE=1 for full output) --
@@ -63,8 +63,21 @@ setup_all: setup_dev setup_espeak setup_piper setup_kokoro setup_stt setup_see #
 	@echo "  Try: cc-tts 'hello from claude code'"
 	@echo "  Then in Claude Code: /speak --toggle"
 
-clean: ## Remove venv + caches (preserves downloaded TTS/STT models)
+clean: ## Remove venv + caches (preserves downloaded TTS/STT/VLM models)
 	rm -rf .venv .pytest_cache .ruff_cache .coverage
+
+clean_models: ## Remove downloaded VLM models (~/.cache/cc-voice/models/)
+	@echo "Removing $$HOME/.cache/cc-voice/models/ ..."
+	@rm -rf $$HOME/.cache/cc-voice/models
+
+clean_see_artifacts: ## Remove /tmp JPEG artifacts produced by cc_vlm --save-only
+	@echo "Removing /tmp JPEG captures ..."
+	@rm -f /tmp/tmp*.jpg 2>/dev/null || true
+
+clean_all: clean clean_models clean_see_artifacts ## Remove venv + caches + models + temp artifacts (full local reset)
+	@echo ""
+	@echo "  All cc-voice local artifacts removed."
+	@echo "  For Claude Code plugin removal also run: make plugin_uninstall"
 
 
 # MARK: VALIDATION
@@ -119,11 +132,73 @@ test_coverage: ## Run pytest with coverage (cc_tts + cc_stt)
 # MARK: RUN
 
 
-speak: ## Test TTS: make speak TEXT="hello"
+speak: ## Run /speak directly (bypasses CC): make speak TEXT="hello"
 	uv run python -m cc_tts.speak $(TEXT)
 
 wrap: ## Wrap command with live TTS (may deadlock under bwrap — see AGENT_LEARNINGS.md)
 	uv run python -m cc_tts.pty_proxy $(CMD)
+
+listen: ## Run /listen directly (bypasses CC): make listen [FILE=recording.wav] (default: live mic)
+	uv run python -m cc_stt $(FILE)
+
+see: ## Run /see directly (bypasses CC): make see [TEMPLATE=terminal]
+	uv run python -m cc_vlm $(if $(TEMPLATE),--template $(TEMPLATE),)
+
+see_file: ## Describe a pre-captured image, no screen capture: make see_file FILE=img.jpg [TEMPLATE=generic]
+	uv run python -m cc_vlm --image-file $(FILE) $(if $(TEMPLATE),--template $(TEMPLATE),)
+
+see_save_only: ## Capture screen + save JPEG, print path (smoke-test mss + processor, no VLM call)
+	uv run python -m cc_vlm --save-only
+
+
+# MARK: SMOKE
+
+
+smoke_imports: ## Smoke: verify all cc_* modules import cleanly (no external deps)
+	@echo "--- cc_tts imports"
+	@uv run python -c "import cc_tts.speak, cc_tts.engine, cc_tts.config; print('  ok')"
+	@echo "--- cc_stt imports"
+	@uv run python -c "import cc_stt.engine, cc_stt.config, cc_stt.listen; print('  ok')"
+	@echo "--- cc_vlm imports"
+	@uv run python -c "import cc_vlm.engine, cc_vlm.config, cc_vlm.capture, cc_vlm.processor, cc_vlm.templates, cc_vlm.cache; print('  ok')"
+
+smoke_cli: ## Smoke: verify each module's --help works
+	@echo "--- cc_tts.speak --help"
+	@uv run python -m cc_tts.speak --help > /dev/null && echo "  ok"
+	@echo "--- cc_stt --help"
+	@uv run python -m cc_stt --help > /dev/null && echo "  ok"
+	@echo "--- cc_vlm --help"
+	@uv run python -m cc_vlm --help > /dev/null && echo "  ok"
+
+smoke: smoke_imports smoke_cli test ## Full smoke: imports + CLIs + test suite
+	@echo ""
+	@echo "  ✓ smoke test passed"
+
+
+# MARK: PLUGIN
+
+
+plugin_validate: ## Validate the local plugin manifest without installing
+	claude plugin validate .
+
+plugin_install_local: ## Install cc-voice from the local working tree (project scope)
+	@echo "Registering local repo as a project-scope marketplace ..."
+	claude plugin marketplace add . --scope project
+	@echo "Installing cc-voice ..."
+	claude plugin install cc-voice@cc-voice --scope project
+	@echo ""
+	@echo "  ✓ plugin installed (project scope). Verify: make plugin_list"
+	@echo "  Then: make run_cc  (try /speak /listen /see in the session)"
+
+plugin_uninstall: ## Remove cc-voice plugin + local marketplace
+	-claude plugin uninstall cc-voice
+	-claude plugin marketplace remove cc-voice --scope project
+
+plugin_list: ## Show installed Claude Code plugins
+	claude plugin list
+
+run_cc: ## Start Claude Code (run make plugin_install_local first)
+	claude
 
 
 # MARK: VERSION

@@ -83,6 +83,72 @@ class TestMainSaveOnly:
         assert Path(out).exists()
 
 
+class TestMainImageFile:
+    @patch("cc_vlm.__main__.resolve_vlm_engine")
+    @patch("cc_vlm.__main__.load_vlm_config")
+    @patch("cc_vlm.__main__.ScreenCapture")
+    def test_image_file_skips_capture(
+        self,
+        mock_capture_cls: MagicMock,
+        mock_load_config: MagicMock,
+        mock_resolve: MagicMock,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        mock_load_config.return_value = VLMConfig()
+        # Create a real pre-captured image for --image-file to find
+        fixture = tmp_path / "fixture.jpg"
+        _fake_image().save(fixture, "JPEG")
+        engine = MagicMock()
+        engine.describe.return_value = "description of fixture"
+        mock_resolve.return_value = engine
+
+        exit_code = main(["--image-file", str(fixture), "--no-cache"])
+
+        assert exit_code == 0
+        # ScreenCapture should NOT have been instantiated
+        mock_capture_cls.assert_not_called()
+        # The engine should have been called with the fixture path
+        call_args = engine.describe.call_args
+        assert call_args[0][0] == fixture
+        out = capsys.readouterr().out
+        assert "description of fixture" in out
+
+    @patch("cc_vlm.__main__.load_vlm_config")
+    def test_image_file_not_found_returns_1(
+        self,
+        mock_load_config: MagicMock,
+        tmp_path: Path,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        mock_load_config.return_value = VLMConfig()
+
+        exit_code = main(["--image-file", str(tmp_path / "nonexistent.jpg")])
+
+        assert exit_code == 1
+        err = capsys.readouterr().err
+        assert "not found" in err
+
+    @patch("cc_vlm.__main__.load_vlm_config")
+    @patch("cc_vlm.__main__.ScreenCapture")
+    def test_capture_failure_prints_fallback_hint(
+        self,
+        mock_capture_cls: MagicMock,
+        mock_load_config: MagicMock,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        """When screen capture fails, user should see --image-file hint."""
+        mock_load_config.return_value = VLMConfig()
+        mock_capture_cls.return_value.grab.side_effect = RuntimeError("XGetImage() failed")
+
+        exit_code = main([])
+
+        assert exit_code == 1
+        err = capsys.readouterr().err
+        assert "screen capture failed" in err
+        assert "--image-file" in err
+
+
 class TestMainNoCacheFlag:
     @patch("cc_vlm.__main__.describe_with_cache")
     @patch("cc_vlm.__main__.resolve_vlm_engine")

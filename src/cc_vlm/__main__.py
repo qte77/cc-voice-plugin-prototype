@@ -53,6 +53,16 @@ def _build_parser() -> argparse.ArgumentParser:
         default=1,
         help="Monitor index to capture (default 1 = primary)",
     )
+    parser.add_argument(
+        "--image-file",
+        type=Path,
+        default=None,
+        help=(
+            "Use this pre-captured image file instead of capturing the screen. "
+            "Useful for describing saved screenshots, headless test runs, or "
+            "environments where mss cannot access a display."
+        ),
+    )
     return parser
 
 
@@ -66,6 +76,30 @@ def _capture_and_save(config: VLMConfig, monitor: int) -> Path:
     return dest
 
 
+def _resolve_image_path(args: argparse.Namespace, config: VLMConfig) -> Path | None:
+    """Return the image path to use, or None if an error was already printed."""
+    if args.image_file is not None:
+        if not args.image_file.is_file():
+            print(
+                f"cc_vlm: --image-file not found: {args.image_file}",
+                file=sys.stderr,
+            )
+            return None
+        return args.image_file
+    try:
+        return _capture_and_save(config, monitor=args.monitor)
+    except Exception as exc:  # noqa: BLE001
+        # Reason: screen capture can fail for many reasons (no display, no
+        # permission, driver error, Wayland vs X11 mismatch). We catch
+        # broadly here so the fallback hint always reaches the user.
+        print(f"cc_vlm: screen capture failed: {exc}", file=sys.stderr)
+        print(
+            "cc_vlm: try --image-file PATH to describe a pre-captured image instead",
+            file=sys.stderr,
+        )
+        return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -74,7 +108,9 @@ def main(argv: list[str] | None = None) -> int:
     template_name = args.template or config.template
     prompt = get_template(template_name)
 
-    image_path = _capture_and_save(config, monitor=args.monitor)
+    image_path = _resolve_image_path(args, config)
+    if image_path is None:
+        return 1
 
     if args.save_only:
         print(str(image_path))
