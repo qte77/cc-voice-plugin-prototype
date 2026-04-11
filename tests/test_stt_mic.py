@@ -26,17 +26,13 @@ class TestMicCaptureInit:
 
     @patch("cc_stt.mic._check_sounddevice")
     @patch("cc_stt.mic._query_devices", side_effect=NoMicrophoneError("no input device"))
-    def test_raises_when_no_input_device(
-        self, mock_query: object, mock_check: object
-    ) -> None:
+    def test_raises_when_no_input_device(self, mock_query: object, mock_check: object) -> None:
         with pytest.raises(NoMicrophoneError, match="no input device"):
             MicCapture()
 
     @patch("cc_stt.mic._query_devices", return_value="default")
     @patch("cc_stt.mic._check_sounddevice")
-    def test_creates_with_default_device(
-        self, mock_check: object, mock_query: object
-    ) -> None:
+    def test_creates_with_default_device(self, mock_check: object, mock_query: object) -> None:
         mic = MicCapture()
         assert mic.device == "default"
         assert mic.sample_rate == 16000
@@ -45,9 +41,7 @@ class TestMicCaptureInit:
 class TestMicCaptureCallback:
     @patch("cc_stt.mic._query_devices", return_value="default")
     @patch("cc_stt.mic._check_sounddevice")
-    def test_on_audio_receives_frames(
-        self, mock_check: object, mock_query: object
-    ) -> None:
+    def test_on_audio_receives_frames(self, mock_check: object, mock_query: object) -> None:
         received: list[bytes] = []
         mic = MicCapture(on_audio=received.append)
 
@@ -60,9 +54,7 @@ class TestMicCaptureCallback:
 
     @patch("cc_stt.mic._query_devices", return_value="default")
     @patch("cc_stt.mic._check_sounddevice")
-    def test_default_callback_is_noop(
-        self, mock_check: object, mock_query: object
-    ) -> None:
+    def test_default_callback_is_noop(self, mock_check: object, mock_query: object) -> None:
         mic = MicCapture()
         import numpy as np
 
@@ -100,9 +92,7 @@ class TestMicCaptureStartStop:
 
     @patch("cc_stt.mic._query_devices", return_value="default")
     @patch("cc_stt.mic._check_sounddevice")
-    def test_stop_without_start_is_noop(
-        self, mock_check: object, mock_query: object
-    ) -> None:
+    def test_stop_without_start_is_noop(self, mock_check: object, mock_query: object) -> None:
         mic = MicCapture()
         mic.stop()  # Should not raise
         assert mic.is_active is False
