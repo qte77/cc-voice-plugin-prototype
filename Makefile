@@ -1,6 +1,6 @@
 .SILENT:
 .ONESHELL:
-.PHONY: setup setup_dev setup_espeak setup_piper setup_kokoro setup_stt setup_all clean validate lint_fix quick_validate lint_src lint_tests lint_md lint_links type_check test test_coverage speak wrap bump_patch bump_minor bump_major help
+.PHONY: setup setup_dev setup_espeak setup_piper setup_kokoro setup_stt setup_user setup_all clean validate lint_fix quick_validate lint_src lint_tests lint_md lint_links type_check test test_coverage speak wrap bump_patch bump_minor bump_major help
 .DEFAULT_GOAL := help
 
 # -- quiet mode (default: quiet; set VERBOSE=1 for full output) --
@@ -33,7 +33,18 @@ setup_kokoro: ## Install Kokoro TTS (best local quality, ~82MB model)
 setup_stt: ## Install STT deps (sounddevice + default engine)
 	uv sync --extra stt
 
-setup_all: setup_dev setup_espeak setup_piper setup_kokoro setup_stt ## Happy path: dev + all TTS + STT
+setup_user: setup setup_kokoro ## End user minimum: package + best local TTS (no dev tools)
+	@echo ""
+	@echo "  ✓ cc-voice ready for /speak via Kokoro."
+	@echo "  Try: cc-tts 'hello from claude code'"
+	@echo ""
+	@echo "  Opt-in for more:"
+	@echo "    make setup_stt          # /listen dependencies (sounddevice + default STT engine)"
+	@echo "    make setup_piper        # alternative TTS (neural VITS, ~60MB)"
+	@echo "    make setup_espeak       # minimal TTS fallback (robotic, zero-config)"
+	@echo "    skills/see/SKILL.md     # /see install guide (llama-cpp-python + GGUF models)"
+
+setup_all: setup_dev setup_espeak setup_piper setup_kokoro setup_stt ## Developer happy path: dev tools + all TTS + STT
 	@echo ""
 	@echo "✓ cc-voice ready."
 	@echo "  Try: cc-tts 'hello from claude code'"
