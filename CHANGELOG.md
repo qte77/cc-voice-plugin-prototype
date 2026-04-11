@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-11
+
+### Added
+- feat(see): `cc_vlm` module with in-process `llama-cpp-python` backend — `/see` skill captures screen, runs a local VLM (Qwen2.5-VL default) with task-constrained prompt templates, returns a text description for Claude's prompt. ~120 tokens/call vs ~1,600 for raw vision (~13× reduction); 0 tokens on cache hits via BLAKE3 frame hash LRU. (#26)
+- feat(see): `--image-file PATH` flag — describe a pre-captured image instead of capturing the screen; enables headless testing and saved-screenshot use cases. (#26)
+- feat(see): five task-constrained prompt templates (terminal, editor, browser, gui, generic) capping VLM output length at the source. (#26)
+- feat(see): `LlamaCppVLMEngine` supporting six model families via `_HANDLER_MAP` (qwen2.5vl, llava15, llava16, moondream, minicpmv, nanollava). (#26)
+- build(make): `setup_user` target — end-user minimum install (package + best local TTS), no dev tools. `setup_all` clarified as "Developer happy path". (#28)
+- build(make): `setup_see` target — installs `[see]` extras (mss, Pillow, blake3) and prints hardware-specific `llama-cpp-python` install commands (CPU / CUDA / Metal / ROCm). (#26)
+- build(make): `plugin_validate`, `plugin_install_local`, `plugin_uninstall`, `plugin_list`, `run_cc` targets — full plugin-in-CC lifecycle for local dev. (#26)
+- build(make): `smoke_imports`, `smoke_cli`, `smoke` targets — fast sanity checks that don't need external deps. (#26)
+- build(make): `listen`, `see`, `see_file`, `see_save_only` direct-run targets (bypass CC for testing). (#26)
+- build(make): `clean_models`, `clean_see_artifacts`, `clean_all` targets — remove downloaded VLM models, `/tmp` JPEGs, and full local reset. (#26)
+- docs(roadmap): `docs/roadmap/v0.5.x.md` — living tracker for deferred ideas and rejected directions alongside filed issues. (#35)
+
+### Changed
+- fix(types): narrow `listen.py` config parameter to `STTConfig | None` (was `object`) — eliminates pyright strict errors without per-line suppressions. (#26)
+- fix(stt): add `argparse` to `cc_stt/__main__.py` — `python -m cc_stt --help` now works; previously jumped straight to `listen_live()` and errored. Backward compat preserved for `python -m cc_stt hook` and file transcription. (#26)
+- chore(build): `[project.optional-dependencies] all` now uses PEP 621 self-references (`cc-voice[piper]`, etc.) instead of duplicating every dep — fixed long-standing DRY violation. (#26)
+
 ## [0.4.0] - 2026-04-11
 
 ### Added
