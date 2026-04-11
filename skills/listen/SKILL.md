@@ -10,7 +10,7 @@ metadata:
 
 # /listen
 
-Transcribe speech using local speech-to-text (planned).
+Transcribe speech using local speech-to-text.
 
 ## Usage
 
@@ -41,4 +41,4 @@ Environment overrides: `CC_STT_ENGINE`, `CC_STT_LANGUAGE`, `CC_STT_WAKE_WORD`, `
 
 ## Status
 
-Prototype — config, engine protocol, mic capture, utterance buffer, and PTY injection are implemented. Live listen pipeline integration is planned.
+Prototype — config, engine protocol, mic capture, utterance buffer, PTY injection, and live listen pipeline are implemented.
