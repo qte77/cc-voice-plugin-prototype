@@ -218,8 +218,8 @@ bump_major: ## Bump major version (0.3.0 → 1.0.0)
 
 
 help: ## Show available recipes grouped by section
-	@echo "Usage: make [recipe]"
 	@echo ""
+	@echo "Usage: make [recipe]"
 	@awk '/^# MARK:/ { \
 		section = substr($$0, index($$0, ":")+2); \
 		printf "\n\033[1m%s\033[0m\n", section \
@@ -232,3 +232,5 @@ help: ## Show available recipes grouped by section
 			printf "  \033[36m%-22s\033[0m %s\n", recipe, substr($$0, RSTART + 3, RLENGTH) \
 		} \
 	}' $(MAKEFILE_LIST)
+	@echo ""
+
