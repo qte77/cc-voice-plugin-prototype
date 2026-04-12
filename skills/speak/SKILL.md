@@ -21,7 +21,7 @@ Speak text aloud using local text-to-speech.
 ## Implementation
 
 ```bash
-python -m cc_tts.speak $ARGUMENTS
+uv run python -m cc_tts.speak $ARGUMENTS
 ```
 
 ## Configuration
@@ -29,11 +29,13 @@ python -m cc_tts.speak $ARGUMENTS
 Edit `.cc-voice.toml` in project root:
 
 ```toml
-engine = "auto"        # "piper" | "espeak" | "auto"
-voice = "en_US-amy-medium"
+[tts]
+engine = "auto"              # "kokoro" | "piper" | "espeak" | "auto"
+voice = "af_sarah"           # kokoro voice name
 speed = 1.0
 auto_read = false
-player = "auto"        # "mpv" | "ffplay" | "aplay" | "auto"
+max_chars = 2000
+player = "auto"              # "mpv" | "ffplay" | "aplay" | "auto"
 ```
 
 Environment overrides: `CC_TTS_ENGINE`, `CC_TTS_VOICE`, `CC_TTS_SPEED`, `CC_TTS_AUTO_READ`.

@@ -1,4 +1,4 @@
-"""Configuration loading from .cc-tts.toml and environment variables."""
+"""Configuration loading from .cc-voice.toml [tts] section and environment variables."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-CONFIG_FILENAMES = [".cc-voice.toml", ".cc-tts.toml"]
+CONFIG_FILENAMES = [".cc-voice.toml"]
 
 
 @dataclass
@@ -23,7 +23,7 @@ class TTSConfig:
 
 
 def _find_config_file() -> Path | None:
-    """Walk up from cwd to find .cc-voice.toml (or legacy .cc-tts.toml)."""
+    """Walk up from cwd to find .cc-voice.toml."""
     current = Path.cwd()
     for directory in [current, *current.parents]:
         for filename in CONFIG_FILENAMES:
@@ -62,14 +62,15 @@ def _apply_env_overrides(config: TTSConfig) -> None:
 
 
 def load_config() -> TTSConfig:
-    """Load config from .cc-tts.toml (if found) with env var overrides."""
+    """Load config from .cc-voice.toml [tts] section with env var overrides."""
     config = TTSConfig()
     config_file = _find_config_file()
     if config_file is not None:
         with config_file.open("rb") as f:
             data = tomllib.load(f)
-        for key in data:
+        tts_data = data.get("tts", {})
+        for key, value in tts_data.items():
             if hasattr(config, key):
-                setattr(config, key, data[key])
+                setattr(config, key, value)
     _apply_env_overrides(config)
     return config

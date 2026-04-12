@@ -130,11 +130,3 @@ class TestLoadVLMConfig:
         config = load_vlm_config()
         assert config.engine == "llamacpp"
         assert not hasattr(config, "unknown_field")
-
-    def test_legacy_cc_tts_toml_fallback(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        (tmp_path / ".cc-tts.toml").write_text('[vlm]\nhandler_name = "llava16"\n')
-        monkeypatch.chdir(tmp_path)
-        config = load_vlm_config()
-        assert config.handler_name == "llava16"
