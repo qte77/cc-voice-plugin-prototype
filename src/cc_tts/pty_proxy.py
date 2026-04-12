@@ -31,10 +31,13 @@ def _tts_worker(
         sentence = q.get()
         if sentence is None:
             break
-        if on_speak is not None:
-            on_speak(sentence)
-        else:
-            synthesize_and_play(sentence)
+        try:
+            if on_speak is not None:
+                on_speak(sentence)
+            else:
+                synthesize_and_play(sentence)
+        except Exception as exc:
+            print(f"[cc-voice] TTS error: {exc}", file=sys.stderr)
 
 
 def _get_winsize(fd: int) -> bytes:
@@ -160,12 +163,17 @@ def run_pty_proxy(
 
     try:
         _proxy_loop(master_fd, stdin_fd, is_tty, stream_filter)
+    except KeyboardInterrupt:
+        pass
     finally:
         if old_attrs is not None:
             termios.tcsetattr(stdin_fd, termios.TCSAFLUSH, old_attrs)
         stream_filter.finish()
         tts_queue.put(None)
-        worker.join(timeout=30)
+        try:
+            worker.join(timeout=5)
+        except KeyboardInterrupt:
+            pass
 
     _, status = os.waitpid(pid, 0)
     return os.waitstatus_to_exitcode(status)
