@@ -18,9 +18,7 @@
       "Bash(git:status:*)",
       "Bash(git:log:--grep:*)",
       "Bash(git:rev-list:*)",
-      "Bash(jq:*)",
       "Bash(make:*)",
-      "Bash(tree:*)",
       "Edit(docs/)",
       "Edit(tests/)",
       "Edit(src/**)",
@@ -59,10 +57,6 @@
       "Edit(README.md)"
     ]
   },
-  "statusLine": {
-    "type": "command",
-    "command": "bash .claude/scripts/statusline.sh"
-  },
   "enabledPlugins": {
     "context7@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
@@ -70,13 +64,20 @@
     "python-dev@qte77-claude-code-utils": true,
     "commit-helper@qte77-claude-code-utils": true,
     "codebase-tools@qte77-claude-code-utils": true,
-    "cc-meta@qte77-claude-code-utils": true
+    "cc-meta@qte77-claude-code-utils": true,
+    "cc-voice@cc-voice": true
   },
   "extraKnownMarketplaces": {
     "qte77-claude-code-utils": {
       "source": {
         "source": "github",
         "repo": "qte77/claude-code-utils-plugin"
+      }
+    },
+    "cc-voice": {
+      "source": {
+        "source": "github",
+        "repo": "qte77/cc-voice-plugin-prototype"
       }
     }
   },

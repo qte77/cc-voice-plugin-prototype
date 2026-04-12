@@ -1,7 +1,7 @@
 """Stop hook handler for auto-read mode.
 
 This hook fires on EVERY Claude response (registered as a Stop hook in
-.claude/settings.json). It is intentionally always-registered rather than
+hooks/hooks.json via the cc-voice plugin). It is intentionally always-registered rather than
 dynamically added/removed because CC hooks don't hot-reload — they require
 a session restart to take effect.
 
@@ -24,11 +24,9 @@ not enable both simultaneously or you'll get double speaking.
 from __future__ import annotations
 
 import json
-import os
 import sys
 
 from cc_tts.config import load_config
-from cc_tts.speak import synthesize_and_play
 
 
 def extract_assistant_text(stdin_data: str) -> str:
@@ -49,8 +47,15 @@ def main() -> None:
 
     Forks after extracting text: parent exits immediately so CC unblocks,
     child synthesizes and plays in background.
+
+    Graceful no-op when deps are missing (team members without TTS setup).
     """
-    config = load_config()
+    try:
+        config = load_config()
+    except Exception:
+        # Config or TTS modules not available — deps not installed.
+        return
+
     if not config.auto_read:
         return
 
@@ -59,18 +64,26 @@ def main() -> None:
     if not text:
         return
 
-    # Fork: parent returns immediately (CC unblocks), child speaks in background.
-    pid = os.fork()
-    if pid != 0:
+    # Launch TTS in a detached subprocess so CC can't kill it when the
+    # hook shell exits. os.fork() doesn't work here because CC kills the
+    # entire process group on hook completion — the forked child dies
+    # before it can synthesize audio. subprocess.Popen with
+    # start_new_session=True creates an independent session/process group.
+    import shutil
+    import subprocess
+
+    if shutil.which("uv") is None:
         return
 
-    # Child process: synthesize and play, then exit.
     try:
-        synthesize_and_play(text, config=config)
-    except Exception:
-        pass  # noqa: S110 — child must not propagate exceptions to CC
-    finally:
-        os._exit(0)
+        subprocess.Popen(
+            ["uv", "run", "python", "-m", "cc_tts.speak", text],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError:
+        return
 
 
 if __name__ == "__main__":
