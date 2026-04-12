@@ -7,7 +7,7 @@ import re
 from cc_tts.sentence_buffer import SentenceBuffer
 
 _ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]|\x1b\].*?\x07")
-_BOX_DRAWING = re.compile(r"[│─┌┐└┘├┤┬┴┼]")
+_PRINTABLE_ASCII = re.compile(r"[^\x20-\x7e]")
 
 
 def _is_nonalpha_line(line: str) -> bool:
@@ -50,13 +50,12 @@ class StreamFilter:
 
         clean = _ANSI_ESCAPE.sub("", text)
 
-        # Normalize PTY line endings (\r\n → \n) before splitting
+        # Normalize PTY line endings, then emulate terminal \r semantics:
+        # \r means "overwrite from start of line" — keep only text after last \r.
         clean = clean.replace("\r\n", "\n")
+        clean = re.sub(r"[^\n]*\r", "", clean)
 
         for line in clean.split("\n"):
-            # Spinner detection: lines with remaining CR are overwrites — skip entirely
-            if "\r" in line:
-                continue
 
             # Code block toggle
             stripped = line.strip()
@@ -67,9 +66,8 @@ class StreamFilter:
             if self._in_code_block:
                 continue
 
-            # Tool output: box-drawing characters
-            if _BOX_DRAWING.search(line):
-                continue
+            # Keep only printable ASCII (drops box-drawing, emoji, etc.)
+            stripped = _PRINTABLE_ASCII.sub("", stripped).strip()
 
             # High non-alpha lines (diffs, separators)
             if _is_nonalpha_line(stripped):

@@ -51,11 +51,16 @@ class TestCodeBlockSkip:
 
 
 class TestToolOutputSkip:
-    def test_skips_box_drawing_lines(self) -> None:
+    def test_skips_pure_border_lines(self) -> None:
         sf, sentences = _make_filter()
-        sf.feed(b"Answer. \n\xe2\x94\x82 tool output\n")
+        sf.feed(b"\xe2\x94\x8c\xe2\x94\x80\xe2\x94\x80\xe2\x94\x90\n")
         sf.buffer.flush()
-        assert "tool output" not in " ".join(sentences)
+        assert sentences == []
+
+    def test_strips_border_keeps_text(self) -> None:
+        sf, sentences = _make_filter()
+        sf.feed(b"\xe2\x94\x82 Hello world. ")
+        assert sentences == ["Hello world."]
 
     def test_skips_high_nonalpha_lines(self) -> None:
         sf, sentences = _make_filter()
@@ -67,11 +72,31 @@ class TestToolOutputSkip:
 class TestSpinnerSkip:
     def test_skips_carriage_return_lines(self) -> None:
         sf, sentences = _make_filter()
-        sf.feed(b"\rSpinning...")
-        sf.feed(b"\rDone.\n")
+        sf.feed(b"Progress 50%...\rProgress 100%\n")
         sf.buffer.flush()
-        # Spinner lines with CR but no preceding NL should be skipped
+        assert "50%" not in " ".join(sentences)
+
+
+class TestInkFrames:
+    def test_ink_frame_produces_speech(self) -> None:
+        """Ink-style \\x1b[2K\\r<text>\\r\\n must not be silenced."""
+        sf, sentences = _make_filter()
+        sf.feed(b"\x1b[2K\rHello world.\r\n")
+        sf.buffer.flush()
+        assert sentences == ["Hello world."]
+
+    def test_multi_overwrite_keeps_last(self) -> None:
+        sf, sentences = _make_filter()
+        sf.feed(b"old\rnew\rfinal text.\r\n")
+        sf.buffer.flush()
+        assert sentences == ["final text."]
+
+    def test_spinner_overwrite_keeps_final(self) -> None:
+        sf, sentences = _make_filter()
+        sf.feed(b"Spinning...\rDone.\n")
+        sf.buffer.flush()
         assert "Spinning" not in " ".join(sentences)
+        assert "Done." in sentences
 
 
 class TestFinish:
