@@ -53,13 +53,13 @@ cc-tts-wrap claude
 # On-demand TTS (CLI)
 cc-tts "Hello from Claude Code"
 
-# Batch auto-read (Stop hook — set in .cc-tts.toml)
+# Batch auto-read (Stop hook — set in .cc-voice.toml [tts])
 # auto_read = true
 ```
 
 ## Configuration
 
-Create `.cc-voice.toml` in project root (also reads legacy `.cc-tts.toml`):
+Create `.cc-voice.toml` in project root:
 
 ```toml
 engine = "auto"              # "espeak" | "piper" | "kokoro" | "auto"

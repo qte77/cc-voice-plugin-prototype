@@ -32,7 +32,7 @@ class VLMConfig:
 
 
 def _find_config_file() -> Path | None:
-    """Walk up from cwd to find .cc-voice.toml (or legacy .cc-tts.toml)."""
+    """Walk up from cwd to find .cc-voice.toml."""
     current = Path.cwd()
     for directory in [current, *current.parents]:
         for filename in CONFIG_FILENAMES:

@@ -50,14 +50,6 @@ class TestLoadSTTConfigFromToml:
         config = load_stt_config()
         assert config.engine == "auto"
 
-    def test_falls_back_to_cc_tts_toml(self, tmp_path: Path, monkeypatch: object) -> None:
-        toml_content = b'[stt]\nengine = "vosk"\n'
-        config_file = tmp_path / ".cc-tts.toml"
-        config_file.write_bytes(toml_content)
-        monkeypatch.chdir(tmp_path)  # type: ignore[union-attr]
-        config = load_stt_config()
-        assert config.engine == "auto"  # legacy .cc-tts.toml no longer read
-
 
 class TestSTTEnvOverrides:
     def test_env_overrides_toml(self, tmp_path: Path, monkeypatch: object) -> None:
