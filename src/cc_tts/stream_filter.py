@@ -6,6 +6,7 @@ import re
 
 from cc_tts.sentence_buffer import SentenceBuffer
 
+_CURSOR_RIGHT = re.compile(r"\x1b\[(\d*)C")
 _ANSI_ESCAPE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]|\x1b\].*?\x07")
 _PRINTABLE_ASCII = re.compile(r"[^\x20-\x7e]")
 
@@ -21,10 +22,17 @@ def _is_nonalpha_line(line: str) -> bool:
 class StreamFilter:
     """Filters PTY output for TTS: strips ANSI, skips code/tool/spinner content."""
 
-    def __init__(self, buffer: SentenceBuffer) -> None:
+    # CC UI markers (after ANSI strip + printable ASCII filter):
+    # ● (\xe2\x97\x8f) = assistant response start
+    # ❯ (\xe2\x9d\xaf) = user prompt (end of response)
+    _RESPONSE_MARKER = "\u25cf"  # ●
+    _PROMPT_MARKER = "\u276f"  # ❯
+
+    def __init__(self, buffer: SentenceBuffer, *, wait_for_prompt: bool = False) -> None:
         self.buffer = buffer
         self._in_code_block = False
         self._byte_remainder = b""
+        self._in_response = not wait_for_prompt
 
     def feed(self, raw: bytes) -> bytes:
         """Process raw PTY bytes. Returns original bytes for terminal passthrough.
@@ -48,14 +56,30 @@ class StreamFilter:
             else:
                 text = data.decode("utf-8", errors="replace")
 
-        clean = _ANSI_ESCAPE.sub("", text)
+        # Ink uses \x1b[1C (cursor right) as spacing — replace with spaces first.
+        clean = _CURSOR_RIGHT.sub(lambda m: " " * max(int(m.group(1) or "1"), 1), text)
+        clean = _ANSI_ESCAPE.sub("", clean)
 
-        # Normalize PTY line endings, then emulate terminal \r semantics:
-        # \r means "overwrite from start of line" — keep only text after last \r.
-        clean = clean.replace("\r\n", "\n")
+        # Detect state markers BEFORE CR normalization — Ink renders ● and ❯
+        # on overwrite lines (\r...\r) that CR normalization would wipe.
+        # A single chunk can contain both markers; use last occurrence to
+        # determine final state.
+        last_bullet = clean.rfind(self._RESPONSE_MARKER)
+        last_prompt = clean.rfind(self._PROMPT_MARKER)
+        if last_bullet > last_prompt:
+            self._in_response = True
+        elif last_prompt > last_bullet:
+            self._in_response = False
+            self.buffer.flush()
+
+        # Normalize PTY line endings (PTY emits \r\r\n or \r\n), then
+        # emulate terminal \r semantics: keep only text after last \r.
+        clean = re.sub(r"\r+\n", "\n", clean)
         clean = re.sub(r"[^\n]*\r", "", clean)
 
         for line in clean.split("\n"):
+            if not self._in_response:
+                continue
 
             # Code block toggle
             stripped = line.strip()

@@ -128,12 +128,14 @@ def run_pty_proxy(
     args: list[str],
     *,
     on_speak: Callable[[str], None] | None = None,
+    wait_for_prompt: bool = False,
 ) -> int:
     """Run a command under a PTY proxy with live TTS.
 
     Args:
         args: Command and arguments to run (e.g., ["claude"]).
         on_speak: Optional callback for testing. If None, uses synthesize_and_play.
+        wait_for_prompt: If True, skip output until first ❯ prompt (for Claude).
 
     Returns:
         Child process exit code.
@@ -144,7 +146,7 @@ def run_pty_proxy(
 
     tts_queue: queue.Queue[str | None] = queue.Queue(maxsize=10)
     buf = SentenceBuffer(on_sentence=tts_queue.put, max_chars=2000)
-    stream_filter = StreamFilter(buf)
+    stream_filter = StreamFilter(buf, wait_for_prompt=wait_for_prompt)
 
     worker = threading.Thread(
         target=_tts_worker, args=(tts_queue,), kwargs={"on_speak": on_speak}, daemon=False
@@ -184,4 +186,4 @@ def main() -> None:
     if len(sys.argv) < 2:
         print("Usage: cc-tts-wrap <command> [args...]", file=sys.stderr)
         sys.exit(1)
-    sys.exit(run_pty_proxy(sys.argv[1:]))
+    sys.exit(run_pty_proxy(sys.argv[1:], wait_for_prompt=True))
