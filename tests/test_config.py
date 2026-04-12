@@ -23,8 +23,8 @@ class TestLoadConfigFromToml:
         import pytest
 
         mp = pytest.MonkeyPatch()  # noqa: F841
-        toml_content = b'engine = "espeak"\nvoice = "en_GB-alan"\nspeed = 1.5\n'
-        config_file = tmp_path / ".cc-tts.toml"
+        toml_content = b'[tts]\nengine = "espeak"\nvoice = "en_GB-alan"\nspeed = 1.5\n'
+        config_file = tmp_path / ".cc-voice.toml"
         config_file.write_bytes(toml_content)
         monkeypatch.chdir(tmp_path)  # type: ignore[union-attr]
         config = load_config()

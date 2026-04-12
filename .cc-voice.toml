@@ -1,0 +1,31 @@
+# cc-voice configuration
+# Single config file for all three skills: /speak, /listen, /see.
+# Loaded from project root (searched upward from cwd).
+
+[tts]
+engine = "auto"              # "kokoro" | "piper" | "espeak" | "auto" (kokoro > piper > espeak)
+voice = "af_sarah"           # kokoro voice name (see kokoro-tts --list-voices)
+speed = 1.0
+auto_read = false            # true = auto-speak every Claude response via Stop hook
+max_chars = 2000
+player = "auto"              # "mpv" | "ffplay" | "aplay" | "auto"
+
+[stt]
+engine = "auto"              # "moonshine" | "vosk" | "auto"
+language = "en"
+wake_word = "hey_claude"
+mic_device = "default"
+auto_listen = false
+
+[vlm]
+engine = "auto"              # "llamacpp" | "auto"
+model_path = ""              # absolute path to .gguf vision model (download first — see skills/see/SKILL.md)
+mmproj_path = ""             # absolute path to mmproj .gguf (CLIP projector)
+handler_name = "qwen2.5vl"   # "qwen2.5vl" | "llava15" | "llava16" | "moondream" | "minicpmv" | "nanollava"
+n_ctx = 4096
+n_gpu_layers = 0             # 0 = CPU only, -1 = all layers to GPU
+max_tokens = 256
+max_dimension = 768          # resize longest edge before VLM (768 = sweet spot for local)
+jpeg_quality = 85
+template = "generic"         # "terminal" | "editor" | "browser" | "gui" | "generic"
+cache_size = 32

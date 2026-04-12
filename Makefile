@@ -170,8 +170,8 @@ plugin_validate: ## Validate the local plugin manifest without installing
 
 plugin_install_local: ## Install cc-voice from the local working tree (project scope)
 	@echo "Registering local repo as a project-scope marketplace ..."
-	claude plugin marketplace add . --scope project
-	@echo "Installing cc-voice ..."
+	claude plugin marketplace add "$(CURDIR)" --scope project
+	@echo "Installing cc-voice from local marketplace ..."
 	claude plugin install cc-voice@cc-voice --scope project
 	@echo ""
 	@echo "  ✓ plugin installed (project scope). Verify: make plugin_list"
@@ -186,6 +186,12 @@ plugin_list: ## Show installed Claude Code plugins
 
 run_cc: ## Start Claude Code (run make plugin_install_local first)
 	claude
+
+run_voice: ## Start Claude Code with auto-read TTS (speaks every response after completion)
+	CC_TTS_AUTO_READ=true claude
+
+run_voice_stream: ## Start Claude Code with live streaming TTS (sentence-by-sentence, may deadlock under bwrap)
+	uv run cc-tts-wrap claude
 
 
 # MARK: VERSION

@@ -56,7 +56,7 @@ class TestLoadSTTConfigFromToml:
         config_file.write_bytes(toml_content)
         monkeypatch.chdir(tmp_path)  # type: ignore[union-attr]
         config = load_stt_config()
-        assert config.engine == "vosk"
+        assert config.engine == "auto"  # legacy .cc-tts.toml no longer read
 
 
 class TestSTTEnvOverrides:

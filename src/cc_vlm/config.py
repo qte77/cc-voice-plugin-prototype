@@ -11,7 +11,7 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-CONFIG_FILENAMES = [".cc-voice.toml", ".cc-tts.toml"]
+CONFIG_FILENAMES = [".cc-voice.toml"]
 
 
 @dataclass

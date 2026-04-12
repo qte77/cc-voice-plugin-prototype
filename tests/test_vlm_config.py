@@ -137,4 +137,4 @@ class TestLoadVLMConfig:
         (tmp_path / ".cc-tts.toml").write_text('[vlm]\nhandler_name = "llava16"\n')
         monkeypatch.chdir(tmp_path)
         config = load_vlm_config()
-        assert config.handler_name == "llava16"
+        assert config.handler_name == "qwen2.5vl"  # legacy .cc-tts.toml no longer read
