@@ -29,7 +29,7 @@ python -m cc_tts.speak $ARGUMENTS
 Edit `.cc-voice.toml` in project root:
 
 ```toml
-engine = "auto"        # "piper" | "espeak" | "auto"
+engine = "auto"        # "kokoro" | "piper" | "espeak" | "auto"
 voice = "en_US-amy-medium"
 speed = 1.0
 auto_read = false
