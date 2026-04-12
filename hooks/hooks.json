@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd ${CLAUDE_PLUGIN_ROOT:-.} && .venv/bin/python -m cc_tts.hook_handler",
+            "command": "uv run python -m cc_tts.hook_handler",
             "timeout": 30
           }
         ]
