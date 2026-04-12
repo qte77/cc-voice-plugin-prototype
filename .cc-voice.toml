@@ -1,12 +1,28 @@
 # cc-voice configuration
 # Single config file for all three skills: /speak, /listen, /see.
 # Loaded from project root (searched upward from cwd).
+#
+# Every field below can be overridden via environment variable:
+#   [tts]  field → CC_TTS_<FIELD>    e.g. engine → CC_TTS_ENGINE
+#   [stt]  field → CC_STT_<FIELD>    e.g. engine → CC_STT_ENGINE
+#   [vlm]  field → CC_VLM_<FIELD>    e.g. model_path → CC_VLM_MODEL_PATH
+# Env vars take precedence over TOML values. Accepted values and defaults
+# are documented inline per field below.
 
 [tts]
 engine = "auto"              # "kokoro" | "piper" | "espeak" | "auto" (kokoro > piper > espeak)
 voice = "af_sarah"           # kokoro voice name (see kokoro-tts --list-voices)
 speed = 1.0
-auto_read = false            # true = auto-speak every Claude response via Stop hook
+auto_read = false             # true = auto-speak every Claude response via Stop hook
+                             #
+                             # Two TTS modes (do not combine — causes double speaking):
+                             #   Batch (Stop hook):     make run_voice         ~2-5s after response ends
+                             #   Streaming (PTY proxy): make run_voice_stream  ~0.5s, sentence-by-sentence
+                             #
+                             # The Stop hook is always registered in .claude/settings.json
+                             # but is a no-op when auto_read = false (exits in <100ms).
+                             # When true, the handler forks — CC unblocks immediately while
+                             # audio plays in background.
 max_chars = 2000
 player = "auto"              # "mpv" | "ffplay" | "aplay" | "auto"
 

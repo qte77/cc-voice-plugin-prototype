@@ -51,11 +51,53 @@ def synthesize_and_play(text: str, config: TTSConfig | None = None) -> None:
             print(f"No audio device. WAV saved: {f.name}", file=sys.stderr)
 
 
-def main() -> None:
-    """CLI entry point for cc-tts."""
-    if len(sys.argv) < 2:
-        print("Usage: cc-tts <text>", file=sys.stderr)
+def _toggle_auto_read() -> None:
+    """Toggle auto_read in .cc-voice.toml [tts] section."""
+    from cc_tts.config import _find_config_file  # pyright: ignore[reportPrivateUsage]
+
+    config_path = _find_config_file()
+    if config_path is None:
+        print("No .cc-voice.toml found — create one first", file=sys.stderr)
         sys.exit(1)
+
+    content = config_path.read_text()
+    if "auto_read = true" in content:
+        content = content.replace("auto_read = true", "auto_read = false", 1)
+        print("auto_read: true → false")
+    elif "auto_read = false" in content:
+        content = content.replace("auto_read = false", "auto_read = true", 1)
+        print("auto_read: false → true")
+    else:
+        print("auto_read field not found in .cc-voice.toml [tts] section", file=sys.stderr)
+        sys.exit(1)
+    config_path.write_text(content)
+
+
+def main() -> None:
+    """CLI entry point for cc-voice speak.
+
+    Usage:
+        python -m cc_tts.speak <text>       speak the given text
+        python -m cc_tts.speak --toggle     flip auto_read in .cc-voice.toml
+        python -m cc_tts.speak --help       show usage
+    """
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print("Usage: python -m cc_tts.speak [--toggle | --help | <text to speak>]")
+        print("  <text>    Speak the given text via the configured TTS engine")
+        print("  --toggle  Flip auto_read in .cc-voice.toml (enables/disables Stop hook TTS)")
+        print("  --help    Show this message")
+        return
+
+    if "--toggle" in sys.argv:
+        _toggle_auto_read()
+        return
+
+    if len(sys.argv) < 2:
+        print(
+            "Usage: python -m cc_tts.speak [--toggle | --help | <text to speak>]", file=sys.stderr
+        )
+        sys.exit(1)
+
     text = " ".join(sys.argv[1:])
     synthesize_and_play(text)
 

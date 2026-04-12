@@ -1,4 +1,4 @@
-"""Tests for cc_tts.hook_handler — TDD RED phase."""
+"""Tests for cc_tts.hook_handler — extracts assistant text from CC Stop hook payload."""
 
 from __future__ import annotations
 
@@ -8,38 +8,30 @@ from cc_tts.hook_handler import extract_assistant_text
 
 
 class TestExtractAssistantText:
-    def test_extracts_text_from_stop_event(self) -> None:
+    def test_extracts_last_assistant_message(self) -> None:
+        """CC Stop hook sends last_assistant_message as a top-level field."""
         payload = {
             "session_id": "abc",
-            "stop_hook_active": True,
-            "transcript": [
-                {"role": "assistant", "content": "Hello from Claude."},
-            ],
+            "hook_event_name": "Stop",
+            "last_assistant_message": "Hello from Claude.",
         }
         result = extract_assistant_text(json.dumps(payload))
         assert result == "Hello from Claude."
 
-    def test_returns_empty_for_no_transcript(self) -> None:
-        payload = {"session_id": "abc"}
+    def test_returns_empty_when_field_missing(self) -> None:
+        payload = {"session_id": "abc", "hook_event_name": "Stop"}
         result = extract_assistant_text(json.dumps(payload))
         assert result == ""
 
-    def test_returns_empty_for_empty_transcript(self) -> None:
-        payload = {"session_id": "abc", "transcript": []}
+    def test_returns_empty_for_empty_message(self) -> None:
+        payload = {"last_assistant_message": ""}
         result = extract_assistant_text(json.dumps(payload))
         assert result == ""
-
-    def test_returns_last_assistant_message(self) -> None:
-        payload = {
-            "transcript": [
-                {"role": "user", "content": "hi"},
-                {"role": "assistant", "content": "first"},
-                {"role": "assistant", "content": "second"},
-            ],
-        }
-        result = extract_assistant_text(json.dumps(payload))
-        assert result == "second"
 
     def test_handles_invalid_json(self) -> None:
         result = extract_assistant_text("not json")
+        assert result == ""
+
+    def test_handles_empty_input(self) -> None:
+        result = extract_assistant_text("")
         assert result == ""
