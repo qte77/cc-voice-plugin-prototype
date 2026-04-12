@@ -6,7 +6,16 @@
 engine = "auto"              # "kokoro" | "piper" | "espeak" | "auto" (kokoro > piper > espeak)
 voice = "af_sarah"           # kokoro voice name (see kokoro-tts --list-voices)
 speed = 1.0
-auto_read = false            # true = auto-speak every Claude response via Stop hook
+auto_read = true             # true = auto-speak every Claude response via Stop hook
+                             #
+                             # Two TTS modes (do not combine — causes double speaking):
+                             #   Batch (Stop hook):     make run_voice         ~2-5s after response ends
+                             #   Streaming (PTY proxy): make run_voice_stream  ~0.5s, sentence-by-sentence
+                             #
+                             # The Stop hook is always registered in .claude/settings.json
+                             # but is a no-op when auto_read = false (exits in <100ms).
+                             # When true, the handler forks — CC unblocks immediately while
+                             # audio plays in background.
 max_chars = 2000
 player = "auto"              # "mpv" | "ffplay" | "aplay" | "auto"
 
