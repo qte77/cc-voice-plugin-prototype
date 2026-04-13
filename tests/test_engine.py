@@ -108,8 +108,9 @@ class TestKokoroEngine:
 
 
 class TestResolveEngine:
+    @patch("cc_tts.engine.EdgeTTSEngine.available", return_value=False)
     @patch("shutil.which", return_value=None)
-    def test_raises_when_no_engine(self, mock_which: object) -> None:
+    def test_raises_when_no_engine(self, mock_which: object, mock_edge: object) -> None:
         with pytest.raises(RuntimeError, match="No TTS engine found"):
             resolve_engine("auto")
 
@@ -126,8 +127,9 @@ class TestResolveEngine:
         engine = resolve_engine("auto")
         assert engine.name == "kokoro"
 
+    @patch("cc_tts.engine.EdgeTTSEngine.available", return_value=False)
     @patch("shutil.which", side_effect=lambda x: "/usr/bin/espeak-ng" if x == "espeak-ng" else None)
-    def test_auto_falls_back_to_espeak(self, mock_which: object) -> None:
+    def test_auto_falls_back_to_espeak(self, mock_which: object, mock_edge: object) -> None:
         engine = resolve_engine("auto")
         assert engine.name == "espeak-ng"
 

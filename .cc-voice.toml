@@ -10,10 +10,10 @@
 # are documented inline per field below.
 
 [tts]
-engine = "auto"              # "kokoro" | "piper" | "espeak" | "auto" (kokoro > piper > espeak)
+engine = "edge"              # "kokoro" | "edge" | "piper" | "espeak" | "auto" (kokoro > edge > piper > espeak)
 voice = "af_sarah"           # kokoro voice name (see kokoro-tts --list-voices)
 speed = 1.0
-auto_read = false             # true = auto-speak every Claude response via Stop hook
+auto_read = true             # true = auto-speak every Claude response via Stop hook
                              #
                              # Two TTS modes (do not combine — causes double speaking):
                              #   Batch (Stop hook):     make run_voice         ~2-5s after response ends
