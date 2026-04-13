@@ -188,16 +188,52 @@ class KokoroEngine:
             os.unlink(txt_path)
 
 
-_ENGINE_TYPES = [KokoroEngine, PiperEngine, EspeakEngine]
+class EdgeTTSEngine:
+    """Edge TTS engine — Microsoft cloud TTS, fast (~1s), high quality."""
+
+    _DEFAULT_VOICE = "en-US-AriaNeural"
+
+    @property
+    def name(self) -> str:
+        return "edge-tts"
+
+    def available(self) -> bool:
+        try:
+            __import__("edge_tts")
+            return True
+        except ImportError:
+            return False
+
+    def synthesize(
+        self, text: str, output_path: str, *, voice: str | None = None, speed: float = 1.0
+    ) -> None:
+        import asyncio
+
+        import edge_tts
+
+        # Edge TTS uses rate as percentage string: "+0%", "+50%", "-25%"
+        rate_pct = int((speed - 1.0) * 100)
+        rate_str = f"{rate_pct:+d}%"
+
+        tts_voice = voice if voice and "Neural" in voice else self._DEFAULT_VOICE
+        communicate = edge_tts.Communicate(text, tts_voice, rate=rate_str)
+
+        # edge-tts saves as mp3 — player.py handles mp3 via mpv/ffplay
+        asyncio.run(communicate.save(output_path))
+
+
+_ENGINE_TYPES = [KokoroEngine, EdgeTTSEngine, PiperEngine, EspeakEngine]
 
 
 def resolve_engine(engine_name: str = "auto") -> TTSEngine:
-    """Resolve a TTS engine by name or auto-detect best available (kokoro > piper > espeak)."""
-    name_map: dict[str, type[KokoroEngine] | type[EspeakEngine] | type[PiperEngine]] = {
+    """Resolve a TTS engine by name or auto-detect best available."""
+    name_map: dict[str, type] = {
         "espeak": EspeakEngine,
         "espeak-ng": EspeakEngine,
         "piper": PiperEngine,
         "kokoro": KokoroEngine,
+        "edge": EdgeTTSEngine,
+        "edge-tts": EdgeTTSEngine,
     }
     if engine_name != "auto":
         cls = name_map.get(engine_name)

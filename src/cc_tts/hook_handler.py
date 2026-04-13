@@ -65,19 +65,15 @@ def main() -> None:
         return
 
     # Launch TTS in a detached subprocess so CC can't kill it when the
-    # hook shell exits. os.fork() doesn't work here because CC kills the
-    # entire process group on hook completion — the forked child dies
-    # before it can synthesize audio. subprocess.Popen with
-    # start_new_session=True creates an independent session/process group.
-    import shutil
+    # hook shell exits. subprocess.Popen with start_new_session=True
+    # creates an independent session/process group that survives hook exit.
+    # Uses sys.executable (same Python, no uv overhead) + --stream for
+    # direct-to-player audio (no temp files, lower memory).
     import subprocess
-
-    if shutil.which("uv") is None:
-        return
 
     try:
         subprocess.Popen(
-            ["uv", "run", "python", "-m", "cc_tts.speak", text],
+            [sys.executable, "-m", "cc_tts.speak", "--stream", text],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True,

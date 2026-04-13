@@ -98,8 +98,17 @@ def main() -> None:
         )
         sys.exit(1)
 
-    text = " ".join(sys.argv[1:])
-    synthesize_and_play(text)
+    stream = "--stream" in sys.argv
+    args = [a for a in sys.argv[1:] if a != "--stream"]
+    text = " ".join(args)
+
+    if stream:
+        from cc_tts.edge_stream import speak_streaming
+
+        config = load_config()
+        speak_streaming(text, voice=config.voice, speed=config.speed, engine=config.engine)
+    else:
+        synthesize_and_play(text)
 
 
 if __name__ == "__main__":

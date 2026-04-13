@@ -22,7 +22,17 @@ setup_dev: ## Install with dev + test deps + all extras
 	uv sync --all-extras
 
 setup_espeak: ## Install espeak-ng + mpv (minimal, robotic TTS fallback)
-	sudo apt-get update && sudo apt-get install -y espeak-ng mpv
+	@if command -v dnf > /dev/null 2>&1; then \
+		sudo dnf install -y espeak-ng mpv; \
+	elif command -v apt-get > /dev/null 2>&1; then \
+		sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng mpv; \
+	elif command -v pacman > /dev/null 2>&1; then \
+		sudo pacman -S --noconfirm espeak-ng mpv; \
+	elif command -v brew > /dev/null 2>&1; then \
+		brew install espeak-ng mpv; \
+	else \
+		echo "No supported package manager found (dnf, apt-get, pacman, brew)" >&2; exit 1; \
+	fi
 
 setup_piper: ## Install Piper TTS (neural, good quality, ~60MB model)
 	uv sync --extra piper
@@ -190,8 +200,12 @@ run_cc: ## Start Claude Code (run make plugin_install_local first)
 run_voice: ## Start Claude Code with auto-read TTS (speaks every response after completion)
 	CC_TTS_AUTO_READ=true claude
 
-run_voice_stream: ## Start Claude Code with live streaming TTS (sentence-by-sentence, may deadlock under bwrap)
+run_voice_stream: ## Start Claude Code with live streaming TTS (PTY proxy, may deadlock under bwrap)
 	uv run cc-tts-wrap claude
+
+run_voice_stream_json: ## Speak Claude response via stream-json (non-interactive, no PTY)
+	@test -n "$(PROMPT)" || { echo "Usage: make run_voice_stream_json PROMPT='your question'"; exit 1; }
+	uv run cc-tts-stream "$(PROMPT)"
 
 
 # MARK: VERSION

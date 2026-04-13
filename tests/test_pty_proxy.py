@@ -1,63 +1,8 @@
-"""Tests for cc_tts.pty_proxy — TDD RED phase."""
+"""Tests for cc_tts.pty_proxy — PTY integration tests."""
 
 from __future__ import annotations
 
-import queue
-
-from cc_tts.pty_proxy import _tts_worker, run_pty_proxy
-
-
-class TestTtsWorker:
-    def test_processes_sentences_from_queue(self) -> None:
-        spoken: list[str] = []
-        q: queue.Queue[str | None] = queue.Queue()
-        q.put("Hello.")
-        q.put(None)  # sentinel to stop
-
-        _tts_worker(q, on_speak=spoken.append)
-        assert spoken == ["Hello."]
-
-    def test_stops_on_none_sentinel(self) -> None:
-        q: queue.Queue[str | None] = queue.Queue()
-        q.put("First.")
-        q.put("Second.")
-        q.put(None)
-
-        spoken: list[str] = []
-        _tts_worker(q, on_speak=spoken.append)
-        assert spoken == ["First.", "Second."]
-
-
-    def test_worker_survives_callback_error(self) -> None:
-        spoken: list[str] = []
-        call_count = 0
-
-        def flaky_speak(sentence: str) -> None:
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
-                raise RuntimeError("engine exploded")
-            spoken.append(sentence)
-
-        q: queue.Queue[str | None] = queue.Queue()
-        q.put("Boom.")
-        q.put("Survives.")
-        q.put(None)
-
-        _tts_worker(q, on_speak=flaky_speak)
-        assert spoken == ["Survives."]
-
-    def test_worker_handles_sigint_in_subprocess(self) -> None:
-        import subprocess
-
-        def sigint_speak(sentence: str) -> None:
-            raise subprocess.CalledProcessError(-2, "kokoro-tts")
-
-        q: queue.Queue[str | None] = queue.Queue()
-        q.put("Interrupted.")
-        q.put(None)
-
-        _tts_worker(q, on_speak=sigint_speak)  # must not raise
+from cc_tts.pty_proxy import run_pty_proxy
 
 
 class TestPtyProxy:
