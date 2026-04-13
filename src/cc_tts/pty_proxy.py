@@ -17,27 +17,8 @@ from collections.abc import Callable
 from typing import Any
 
 from cc_tts.sentence_buffer import SentenceBuffer
-from cc_tts.speak import synthesize_and_play
 from cc_tts.stream_filter import StreamFilter
-
-
-def _tts_worker(
-    q: queue.Queue[str | None],
-    *,
-    on_speak: Callable[[str], None] | None = None,
-) -> None:
-    """Pull sentences from queue and speak them. Stops on None sentinel."""
-    while True:
-        sentence = q.get()
-        if sentence is None:
-            break
-        try:
-            if on_speak is not None:
-                on_speak(sentence)
-            else:
-                synthesize_and_play(sentence)
-        except Exception as exc:
-            print(f"[cc-voice] TTS error: {exc}", file=sys.stderr)
+from cc_tts.tts_worker import tts_worker
 
 
 def _get_winsize(fd: int) -> bytes:
@@ -147,7 +128,7 @@ def run_pty_proxy(
     stream_filter = StreamFilter(buf)
 
     worker = threading.Thread(
-        target=_tts_worker, args=(tts_queue,), kwargs={"on_speak": on_speak}, daemon=False
+        target=tts_worker, args=(tts_queue,), kwargs={"on_speak": on_speak}, daemon=False
     )
     worker.start()
 
