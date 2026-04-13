@@ -77,7 +77,7 @@ mic_device = "default"
 auto_listen = false
 ```
 
-TTS env overrides: `CC_TTS_ENGINE`, `CC_TTS_VOICE`, `CC_TTS_SPEED`, `CC_TTS_AUTO_READ`, `CC_TTS_PLAYER`.
+TTS env overrides: `CC_TTS_ENGINE`, `CC_TTS_VOICE`, `CC_TTS_SPEED`, `CC_TTS_AUTO_READ`, `CC_TTS_MAX_CHARS`, `CC_TTS_PLAYER`.
 
 STT env overrides: `CC_STT_ENGINE`, `CC_STT_LANGUAGE`, `CC_STT_WAKE_WORD`, `CC_STT_MIC_DEVICE`, `CC_STT_AUTO_LISTEN`.
 
