@@ -13,6 +13,13 @@ def speak_streaming(
     text: str, *, voice: str = "en-US-AriaNeural", speed: float = 1.0, engine: str = "auto"
 ) -> None:
     """Synthesize and play text, streaming audio to player where possible."""
+    from cc_tts.preprocess import preprocess
+
+    # Strip markdown, code blocks, URLs so TTS doesn't read "hash hash What we lose".
+    text = preprocess(text)
+    if not text:
+        return
+
     if engine == "auto":
         # Priority: kokoro (best local) > piper > espeak > edge-tts (cloud, last resort)
         _fallbacks = [("kokoro-tts", "kokoro"), ("piper", "piper"), ("espeak-ng", "espeak")]
