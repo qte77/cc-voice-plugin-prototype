@@ -40,16 +40,17 @@ player = "auto"              # "mpv" | "ffplay" | "aplay" | "auto"
 
 Environment overrides: `CC_TTS_ENGINE`, `CC_TTS_VOICE`, `CC_TTS_SPEED`, `CC_TTS_AUTO_READ`.
 
-## TTS modes — batch vs streaming
+## TTS modes
 
-Two ways to auto-speak Claude's responses. **Do not combine** — causes double speaking.
+Three delivery paths — see [../../docs/adr/0002-tts-delivery-modes.md](../../docs/adr/0002-tts-delivery-modes.md) for rationale.
 
-| Mode | Start with | First audio | How it works |
-|---|---|---|---|
-| **Batch (Stop hook)** | `/speak --toggle` or `make run_voice` | ~2-5s after response ends | Stop hook fires → handler forks (CC unblocks) → Kokoro synthesizes full text → plays |
-| **Streaming (PTY proxy)** | `make run_voice_stream` | ~0.5s after first sentence | PTY wrapper intercepts stdout → speaks sentence-by-sentence as Claude types |
+| Mode | Start with | Interactive | First audio | Notes |
+|---|---|---|---|---|
+| **Stop hook** (recommended) | `/speak --toggle` | ✓ | ~1-2s after response ends | Full Ink UI, sentence-by-sentence playback via SentenceBuffer |
+| **Stream-json pipe** | `cc-tts-stream "prompt"` | ✗ (one prompt) | ~0.5-1s | True mid-generation streaming, no Ink UI |
+| PTY proxy (legacy) | `cc-tts-wrap claude` | ✓ | ~0.5s if working | Brittle — scrapes Ink output, breaks on CC UI changes |
 
-**Stop hook latency**: the handler forks immediately so CC accepts input while audio plays in the background. Synthesis time is proportional to response length (~1s per 100 words with Kokoro). For low-latency needs, use streaming mode.
+**Do not combine Stop hook + PTY proxy** — causes double speaking.
 
 ## Voice Loop (STT + TTS)
 

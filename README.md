@@ -81,19 +81,75 @@ TTS env overrides: `CC_TTS_ENGINE`, `CC_TTS_VOICE`, `CC_TTS_SPEED`, `CC_TTS_AUTO
 
 STT env overrides: `CC_STT_ENGINE`, `CC_STT_LANGUAGE`, `CC_STT_WAKE_WORD`, `CC_STT_MIC_DEVICE`, `CC_STT_AUTO_LISTEN`.
 
-## Architecture
+## TTS delivery modes
+
+Three paths for getting Claude's text to TTS, each with trade-offs:
+
+| Mode | Interactive? | Ink UI? | Real streaming? | Brittleness | Entry point |
+|------|-------------|---------|-----------------|-------------|-------------|
+| **Stop hook** (recommended) | yes | yes | no (post-response) | none | `auto_read=true` in `.cc-voice.toml` |
+| Stream-json pipe | no | no | yes | low | `cc-tts-stream "prompt"` |
+| PTY proxy | yes | yes | yes (when working) | high — scrapes Ink output | `cc-tts-wrap claude` |
+
+**Recommended for daily use**: Stop hook. Interactive Claude, full Ink UI, TTS fires after each response. The `SentenceBuffer` splits the full response into sentences so audio starts ~1s after response completes, not at the very end.
+
+See [docs/adr/0002-tts-delivery-modes.md](docs/adr/0002-tts-delivery-modes.md) for the full architectural decision.
+
+### Architecture diagrams
+
+**Stop hook (recommended)**
+
+```text
+claude (interactive, Ink UI)
+    ↓  response complete
+.claude/settings.json hooks.Stop
+    ↓  JSON: {"last_assistant_message": "..."}
+hook_handler.py → load_config, check auto_read
+    ↓  if auto_read=true: spawn detached
+speak.py --stream → speak_streaming()
+    ↓
+edge_stream.py (per engine) → player stdin
+```
+
+**Stream-json pipe (non-interactive, single prompt)**
+
+```text
+cc-tts-stream "your prompt"
+    ↓
+claude -p --output-format stream-json --include-partial-messages
+    ↓  newline-delimited JSON
+stream_json.py → parse text_delta events
+    ↓
+sentence_buffer.py → sentences as they arrive
+    ↓
+tts_worker.py queue → speak_streaming() (streaming per engine)
+```
+
+**PTY proxy (legacy, Ink-dependent)**
 
 ```text
 cc-tts-wrap claude
     ↓
 PTY proxy (pty_proxy.py) ↔ claude (interactive)
+    ↓  raw terminal bytes
+stream_filter.py → ANSI strip, CR normalize, whitelist, code-block skip
     ↓
-stream_filter.py → ANSI strip, code block skip, spinner suppress
-    ↓
-sentence_buffer.py → accumulate, flush on ". " / "? " / "! "
+sentence_buffer.py → sentences on ". " / "? " / "! "
     ↓
 speak.py → engine.synthesize() → player.play_audio()
 ```
+
+### How to interrupt voice playback
+
+No clean interrupt command yet. Brute-force options:
+
+```bash
+pkill -f "cc_tts.speak"      # kill the speak subprocess
+pkill -f "mpv|ffplay"         # kill the audio player
+pkill -f "kokoro-tts|piper"   # kill the TTS engine
+```
+
+FIXME: proper `cc-tts --stop` (PID file + `killpg`) is planned — see issue tracker.
 
 ## Development
 
