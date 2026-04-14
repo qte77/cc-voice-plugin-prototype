@@ -141,15 +141,28 @@ speak.py → engine.synthesize() → player.play_audio()
 
 ### How to interrupt voice playback
 
-No clean interrupt command yet. Brute-force options:
-
 ```bash
-pkill -f "cc_tts.speak"      # kill the speak subprocess
-pkill -f "mpv|ffplay"         # kill the audio player
-pkill -f "kokoro-tts|piper"   # kill the TTS engine
+uv run cc-tts --stop
 ```
 
-FIXME: proper `cc-tts --stop` (PID file + `killpg`) is planned — see issue tracker.
+Reads the PID file at `~/.cache/cc-voice/speak.pid` and sends SIGTERM to the whole process group (engine + player + children). Works for all delivery modes (Stop hook, stream-json, PTY proxy) — any mode writes the pidfile on start.
+
+**Bind to a hotkey** (no code change needed). Pick a key not already used by your shell/editors. Common available choices: Alt+s, F8, Ctrl+\\:
+
+```bash
+# bash — Alt+s (\\es)
+bind -x '"\es":"uv run cc-tts --stop"'
+
+# zsh — Alt+s
+cc-tts-stop() { uv run cc-tts --stop }
+zle -N cc-tts-stop
+bindkey '^[s' cc-tts-stop
+
+# tmux — prefix + s (or global with -n)
+bind-key s run-shell "uv run cc-tts --stop"
+```
+
+Avoid Ctrl+G (opens nano help), Ctrl+C (sends SIGINT), Ctrl+D (EOF), Ctrl+Z (suspend).
 
 ## Development
 
