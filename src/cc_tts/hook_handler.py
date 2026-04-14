@@ -23,10 +23,17 @@ not enable both simultaneously or you'll get double speaking.
 
 from __future__ import annotations
 
+import datetime
 import json
+import os
 import sys
+from pathlib import Path
 
 from cc_tts.config import load_config
+
+# Debug log path: ~/.cache/cc-voice/hook.log
+# Set CC_TTS_HOOK_DEBUG=1 to enable; disabled by default.
+_LOG_PATH = Path.home() / ".cache" / "cc-voice" / "hook.log"
 
 
 def extract_assistant_text(stdin_data: str) -> str:
@@ -42,6 +49,15 @@ def extract_assistant_text(stdin_data: str) -> str:
     return str(payload.get("last_assistant_message", ""))
 
 
+def _debug(msg: str) -> None:
+    """Append to debug log if CC_TTS_HOOK_DEBUG=1, else no-op."""
+    if os.environ.get("CC_TTS_HOOK_DEBUG") != "1":
+        return
+    _LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with _LOG_PATH.open("a") as f:
+        f.write(f"[{datetime.datetime.now().isoformat(timespec='seconds')}] {msg}\n")
+
+
 def main() -> None:
     """Entry point for the Stop hook. Reads stdin, speaks if auto_read enabled.
 
@@ -49,18 +65,24 @@ def main() -> None:
     child synthesizes and plays in background.
 
     Graceful no-op when deps are missing (team members without TTS setup).
+    Set CC_TTS_HOOK_DEBUG=1 to log diagnostics to ~/.cache/cc-voice/hook.log.
     """
+    _debug("hook fired")
+
     try:
         config = load_config()
-    except Exception:
+    except Exception as exc:
+        _debug(f"config error: {exc}")
         # Config or TTS modules not available — deps not installed.
         return
 
+    _debug(f"auto_read={config.auto_read}")
     if not config.auto_read:
         return
 
     stdin_data = sys.stdin.read()
     text = extract_assistant_text(stdin_data)
+    _debug(f"text ({len(text)} chars): {text[:80]!r}")
     if not text:
         return
 
@@ -72,14 +94,15 @@ def main() -> None:
     import subprocess
 
     try:
-        subprocess.Popen(
+        p = subprocess.Popen(
             [sys.executable, "-m", "cc_tts.speak", "--stream", text],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
-    except OSError:
-        return
+        _debug(f"spawned pid={p.pid}")
+    except OSError as exc:
+        _debug(f"Popen failed: {exc}")
 
 
 if __name__ == "__main__":
