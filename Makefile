@@ -207,6 +207,12 @@ run_voice_stream_json: ## Speak Claude response via stream-json (non-interactive
 	@test -n "$(PROMPT)" || { echo "Usage: make run_voice_stream_json PROMPT='your question'"; exit 1; }
 	uv run cc-tts-stream "$(PROMPT)"
 
+run_repl: ## Interactive REPL with stream-json TTS (no Ink UI, sandbox-safe)
+	uv run cc-tts-repl
+
+reinstall_plugin: ## Force-reinstall cc-voice plugin (busts stale cache)
+	claude plugin install cc-voice@cc-voice --force
+
 
 # MARK: VERSION
 

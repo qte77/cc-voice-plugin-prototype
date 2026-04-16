@@ -29,6 +29,7 @@ test = ["pytest>=9.0.3", "pytest-cov>=6.0"]
 cc-tts = "cc_tts.speak:main"              # speak text: cc-tts "hello"  |  cc-tts --toggle
 cc-tts-wrap = "cc_tts.pty_proxy:main"     # PTY proxy: cc-tts-wrap claude (interactive, fragile)
 cc-tts-stream = "cc_tts.stream_json:main" # stream-json: cc-tts-stream "prompt" (non-interactive, robust)
+cc-tts-repl = "cc_tts.repl:main"         # REPL: cc-tts-repl (interactive stream-json + TTS)
 
 [build-system]
 requires = ["hatchling"]
