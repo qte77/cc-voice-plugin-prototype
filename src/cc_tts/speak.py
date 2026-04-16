@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import atexit
 import os
+import signal
 import sys
 import tempfile
 from pathlib import Path
@@ -13,6 +15,46 @@ from cc_tts.player import NoAudioDeviceError, play_audio
 from cc_tts.preprocess import preprocess
 
 _output_counter = 0
+
+# PID file for --stop interrupt. Stores the current speak PGID (process group).
+_PID_FILE = Path.home() / ".cache" / "cc-voice" / "speak.pid"
+
+
+def _write_pidfile() -> None:
+    """Write current process group ID to pidfile for --stop to find."""
+    _PID_FILE.parent.mkdir(parents=True, exist_ok=True)
+    pgid = os.getpgrp()
+    _PID_FILE.write_text(str(pgid))
+    atexit.register(_clear_pidfile)
+
+
+def _clear_pidfile() -> None:
+    """Remove pidfile on clean exit."""
+    try:
+        _PID_FILE.unlink()
+    except FileNotFoundError:
+        pass
+
+
+def _stop_playback() -> int:
+    """Read pidfile, kill process group, clear pidfile. Returns exit code."""
+    if not _PID_FILE.exists():
+        print("No TTS playback running (no pidfile).", file=sys.stderr)
+        return 1
+    try:
+        pgid = int(_PID_FILE.read_text().strip())
+    except (OSError, ValueError) as exc:
+        print(f"Invalid pidfile: {exc}", file=sys.stderr)
+        _clear_pidfile()
+        return 1
+    try:
+        os.killpg(pgid, signal.SIGTERM)
+        print(f"Stopped TTS playback (pgid={pgid})")
+    except ProcessLookupError:
+        print("TTS playback already exited.", file=sys.stderr)
+    finally:
+        _clear_pidfile()
+    return 0
 
 
 def _next_output_path(output_dir: Path) -> str:
@@ -82,11 +124,16 @@ def main() -> None:
         python -m cc_tts.speak --help       show usage
     """
     if "--help" in sys.argv or "-h" in sys.argv:
-        print("Usage: python -m cc_tts.speak [--toggle | --help | <text to speak>]")
+        print("Usage: python -m cc_tts.speak [--toggle | --stop | --stream | <text>]")
         print("  <text>    Speak the given text via the configured TTS engine")
+        print("  --stream  Stream audio directly to player (no temp files)")
+        print("  --stop    Interrupt ongoing TTS playback (SIGTERM to process group)")
         print("  --toggle  Flip auto_read in .cc-voice.toml (enables/disables Stop hook TTS)")
         print("  --help    Show this message")
         return
+
+    if "--stop" in sys.argv:
+        sys.exit(_stop_playback())
 
     if "--toggle" in sys.argv:
         _toggle_auto_read()
@@ -101,6 +148,8 @@ def main() -> None:
     stream = "--stream" in sys.argv
     args = [a for a in sys.argv[1:] if a != "--stream"]
     text = " ".join(args)
+
+    _write_pidfile()
 
     if stream:
         from cc_tts.edge_stream import speak_streaming
