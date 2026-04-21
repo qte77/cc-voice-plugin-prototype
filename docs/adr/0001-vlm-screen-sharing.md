@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Context
 
@@ -51,9 +51,10 @@ context-aware programming partner.
 
 ## Decision
 
-Start with **Tier 1 (CC-native)** as the MVP. Add Tier 2 and Tier 3 as optional
-engines following the STT engine `Protocol` pattern (`VLMEngine` protocol with an
-`analyze()` method).
+Start with **Tier 2 (local VLM)** as the MVP. Tier 1 (Claude Vision API) deferred —
+token cost (~1,600 per image vs ~120 for local VLM text description) is the dominant
+UX concern for interactive `/see` use. Add Tier 3 as optional engine following the
+STT engine `Protocol` pattern (`VLMEngine` protocol with an `analyze()` method).
 
 ## Architecture
 
@@ -65,14 +66,14 @@ Following the same patterns as STT (`STTEngine` protocol, `resolve_stt_engine`):
 |--------|---------------|
 | `src/cc_vlm/capture.py` | `ScreenCapture` class wrapping `python-mss` |
 | `src/cc_vlm/processor.py` | Resize, compress, region selection, base64 encoding |
-| `src/cc_vlm/engine.py` | `VLMEngine` Protocol + `ClaudeVisionEngine` + `MoondreamEngine` |
+| `src/cc_vlm/engine.py` | `VLMEngine` Protocol + `LlamaCppVLMEngine` (supports Qwen, LLaVA, Moondream, MiniCPM, NanoLLaVA via handler_name) |
 | `src/cc_vlm/config.py` | `.cc-voice.toml` `[vlm]` section parsing |
 
 Configuration:
 
 ```toml
 [vlm]
-engine = "auto"          # "claude" | "moondream" | "auto"
+engine = "auto"          # "llamacpp" | "auto"
 max_dimension = 1568     # longest edge in pixels
 jpeg_quality = 85
 region = "full"          # "full" | "active" | custom rect
@@ -88,9 +89,11 @@ Environment overrides: `CC_VLM_ENGINE`, `CC_VLM_MAX_DIMENSION`, `CC_VLM_REGION`.
 | SmolVLM-256M | 256 M | ~500 ms | Basic | Apache 2.0 |
 | Qwen2.5-VL-3B | 3 B | ~4 s | Excellent | Apache 2.0 |
 | GLM-Edge-V-2B | 2 B | ~3 s | Good | Apache 2.0 |
+| Qwen2.5-VL-2B | 2 B | ~3 s | Good | Apache 2.0 |
+| LFM2-VL-3B | 3 B | ~3 s | Good | Apache 2.0 |
 
-Moondream2 is the recommended Tier 2 default: best balance of speed, quality,
-and model size for on-device use.
+Qwen2.5-VL-3B is the shipped default: best OCR quality for terminal and editor
+screenshots. Moondream2 remains a lightweight alternative.
 
 ## Consequences
 
@@ -103,9 +106,10 @@ and model size for on-device use.
 ### Negative
 
 - Tier 2/3 add significant optional dependencies (llama-cpp-python, model files)
-- Claude Vision API costs ~1 K tokens per screenshot
+- Local VLM: ~120 tokens per call (text description). Claude Vision API (deferred): ~1,600 tokens per raw image.
 
 ### Risks
 
 - Screen capture permissions vary by OS (macOS requires Screen Recording permission)
 - Large model files for Tier 2 (~1-4 GB) affect first-run experience
+- `inferrs` was evaluated and rejected — text-LLM only, no vision support.
