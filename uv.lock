@@ -273,6 +273,9 @@ wheels = [
 name = "cc-voice"
 version = "0.5.0"
 source = { editable = "." }
+dependencies = [
+    { name = "pydantic-settings" },
+]
 
 [package.optional-dependencies]
 all = [
@@ -319,6 +322,7 @@ requires-dist = [
     { name = "mss", marker = "extra == 'see'", specifier = ">=9.0.0" },
     { name = "pillow", marker = "extra == 'see'", specifier = ">=10.0.0" },
     { name = "piper-tts", marker = "extra == 'piper'", specifier = ">=1.2.0" },
+    { name = "pydantic-settings", specifier = ">=2.9.1" },
     { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.408" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=9.0.3" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6.0" },

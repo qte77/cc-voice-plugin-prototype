@@ -1,4 +1,4 @@
-"""Tests for cc_vlm.config — VLMConfig dataclass + TOML + env overrides."""
+"""Tests for cc_vlm.config — VLMConfig BaseSettings + TOML + env overrides."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from cc_vlm.config import VLMConfig, _apply_env_overrides, load_vlm_config
+from cc_vlm.config import VLMConfig, load_vlm_config
 
 
 class TestVLMConfigDefaults:
@@ -50,7 +50,6 @@ class TestEnvOverrides:
         monkeypatch.setenv("CC_VLM_HANDLER_NAME", "llava15")
         monkeypatch.setenv("CC_VLM_TEMPLATE", "terminal")
         config = VLMConfig()
-        _apply_env_overrides(config)
         assert config.engine == "llamacpp"
         assert config.model_path == "/tmp/qwen.gguf"
         assert config.mmproj_path == "/tmp/qwen-mmproj.gguf"
@@ -65,7 +64,6 @@ class TestEnvOverrides:
         monkeypatch.setenv("CC_VLM_JPEG_QUALITY", "75")
         monkeypatch.setenv("CC_VLM_CACHE_SIZE", "64")
         config = VLMConfig()
-        _apply_env_overrides(config)
         assert config.n_ctx == 8192
         assert config.n_gpu_layers == -1
         assert config.max_tokens == 512
@@ -73,15 +71,13 @@ class TestEnvOverrides:
         assert config.jpeg_quality == 75
         assert config.cache_size == 64
 
-    def test_invalid_int_env_falls_back_to_default(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_invalid_int_env_raises_validation_error(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("CC_VLM_MAX_DIMENSION", "not-a-number")
-        config = VLMConfig()
-        _apply_env_overrides(config)
-        assert config.max_dimension == 768  # unchanged
+        with pytest.raises(Exception):  # noqa: B017
+            VLMConfig()
 
     def test_env_missing_leaves_defaults(self) -> None:
         config = VLMConfig()
-        _apply_env_overrides(config)
         assert config.engine == "auto"
 
 
