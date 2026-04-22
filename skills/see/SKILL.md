@@ -162,4 +162,4 @@ Development — functional MVP. Ships `LlamaCppVLMEngine` only. The following ar
 - **Auto-template detection** — pick the right template from the focused window's class name
 - **Persistent on-disk cache** — shared across processes (current cache is per-invocation)
 
-See `docs/adr/0001-vlm-screen-sharing.md` for architectural background. This MVP ships Tier 2 (local VLM → text) as the default rather than the ADR's original Tier 1 recommendation; the rationale is that token cost is the dominant UX concern for interactive `/see` use.
+See `docs/adr/0003-vlm-screen-sharing.md` for architectural decision.

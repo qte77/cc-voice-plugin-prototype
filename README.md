@@ -93,7 +93,7 @@ Three paths for getting Claude's text to TTS, each with trade-offs:
 
 **Recommended for daily use**: Stop hook. Interactive Claude, full Ink UI, TTS fires after each response. The `SentenceBuffer` splits the full response into sentences so audio starts ~1s after response completes, not at the very end.
 
-See [docs/adr/0002-tts-delivery-modes.md](docs/adr/0002-tts-delivery-modes.md) for the full architectural decision.
+See [docs/adr/0001-tts-delivery-modes.md](docs/adr/0001-tts-delivery-modes.md) for the full architectural decision.
 
 ### Architecture diagrams
 

@@ -42,7 +42,7 @@ Environment overrides: `CC_TTS_ENGINE`, `CC_TTS_VOICE`, `CC_TTS_SPEED`, `CC_TTS_
 
 ## TTS modes
 
-Three delivery paths — see [../../docs/adr/0002-tts-delivery-modes.md](../../docs/adr/0002-tts-delivery-modes.md) for rationale.
+Three delivery paths — see [../../docs/adr/0001-tts-delivery-modes.md](../../docs/adr/0001-tts-delivery-modes.md) for rationale.
 
 | Mode | Start with | Interactive | First audio | Notes |
 |---|---|---|---|---|
