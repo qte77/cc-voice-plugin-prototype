@@ -32,7 +32,7 @@ Worker 2 (Docs): Update SKILL.md and README with --format flag docs. Files: skil
 ## Key references
 
 - **Skills**: `skills/speak/SKILL.md`, `skills/listen/SKILL.md`, `skills/see/SKILL.md`
-- **ADRs**: `docs/adr/0001-vlm-screen-sharing.md`, `docs/adr/0002-tts-delivery-modes.md`
+- **ADRs**: `docs/adr/0001-tts-delivery-modes.md`, `docs/adr/0002-stt-engine-selection.md`, `docs/adr/0003-vlm-screen-sharing.md`
 - **Roadmap**: `docs/roadmap/v0.5.x.md`
 - **Config**: `.cc-voice.toml` (TOML + env overrides)
 - **Learnings**: `AGENT_LEARNINGS.md`
