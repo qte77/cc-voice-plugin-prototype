@@ -15,6 +15,9 @@ class TestSTTConfigDefaults:
         assert config.wake_word == "hey_claude"
         assert config.mic_device == "default"
         assert config.auto_listen is False
+        assert config.strip_fillers is True
+        assert config.intent_match is True
+        assert config.max_words == 200
 
     def test_default_is_not_mutable_across_instances(self) -> None:
         a = STTConfig()

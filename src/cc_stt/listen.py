@@ -9,7 +9,9 @@ from pathlib import Path
 
 from cc_stt.config import STTConfig, load_stt_config
 from cc_stt.engine import resolve_stt_engine
+from cc_stt.intents import match_intent
 from cc_stt.mic import MicCapture
+from cc_stt.preprocess import cap_words, strip_fillers
 from cc_stt.pty_input import inject_text
 from cc_stt.utterance_buffer import UtteranceBuffer
 
@@ -37,11 +39,22 @@ def listen_live(
     engine = resolve_stt_engine(stt_config.engine)
 
     def on_utterance(pcm_bytes: bytes) -> None:
-        """Transcribe utterance and inject text to PTY."""
+        """Transcribe utterance, preprocess, and inject text to PTY."""
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=True) as tmp:
             _write_wav(pcm_bytes, tmp.name, sample_rate=16000)
             text = engine.transcribe(tmp.name)
-        if text and pty_fd is not None:
+        if not text or pty_fd is None:
+            return
+        if stt_config.strip_fillers:
+            text = strip_fillers(text)
+        if stt_config.intent_match:
+            matched, action = match_intent(text)
+            if matched:
+                if action is not None:
+                    inject_text(pty_fd, action)
+                return
+        text = cap_words(text, stt_config.max_words)
+        if text:
             inject_text(pty_fd, text)
 
     buffer = UtteranceBuffer(on_utterance)
