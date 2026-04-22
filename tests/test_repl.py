@@ -38,16 +38,18 @@ class TestFormatUserMessage:
         assert parsed["message"]["content"] == "hello"
 
     def test_preserves_text(self) -> None:
-        msg = format_user_message("tell me a joke with \"quotes\"")
+        msg = format_user_message('tell me a joke with "quotes"')
         parsed = json.loads(msg)
         assert parsed["message"]["content"] == 'tell me a joke with "quotes"'
 
 
 def _text_delta_line(text: str) -> str:
     """Build a stream-json text_delta event line."""
-    return json.dumps({
-        "event": {"type": "content_block_delta", "delta": {"type": "text_delta", "text": text}},
-    })
+    return json.dumps(
+        {
+            "event": {"type": "content_block_delta", "delta": {"type": "text_delta", "text": text}},
+        }
+    )
 
 
 def _event_line(etype: str) -> str:
@@ -89,10 +91,12 @@ class TestReadStreamEvents:
         """Non-text, non-stop events do not call on_text or set turn_done."""
         received: list[str] = []
         turn_done = threading.Event()
-        stdout = iter([
-            json.dumps({"event": {"type": "content_block_start"}}),
-            json.dumps({"event": {"type": "content_block_stop"}}),
-        ])
+        stdout = iter(
+            [
+                json.dumps({"event": {"type": "content_block_start"}}),
+                json.dumps({"event": {"type": "content_block_stop"}}),
+            ]
+        )
         read_stream_events(stdout, on_text=received.append, turn_done=turn_done)
         assert received == []
         assert not turn_done.is_set()
