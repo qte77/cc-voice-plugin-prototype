@@ -107,6 +107,7 @@ cache_size = 32                     # per-invocation LRU entries
 ```
 
 **Supported handler_name values**:
+
 - `qwen2.5vl` → `Qwen25VLChatHandler` (default, works with Qwen2.5-VL-2B/3B/7B)
 - `llava15` → `Llava15ChatHandler` (LLaVA 1.5)
 - `llava16` → `Llava16ChatHandler` (LLaVA 1.6)
@@ -129,6 +130,7 @@ Prompt templates cap the VLM's output length at the source (e.g., `terminal` say
 ## Why llama-cpp-python and not Ollama
 
 cc-voice prefers **lean w/o overhead**:
+
 - **No persistent daemon** — nothing running when `/see` isn't being called (Ollama holds ~2.5 GB RAM idle)
 - **No HTTP layer** — direct in-process Python call
 - **No separate system service** — fewer moving parts, nothing to start/stop
