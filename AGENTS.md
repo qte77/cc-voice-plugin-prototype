@@ -22,7 +22,7 @@ Role archetypes for subagent dispatch via `cc-meta:orchestrating-parallel-worker
 
 ## Dispatch example
 
-```
+```text
 /orchestrating-parallel-workers
 
 Worker 1 (Implementer): Add --format flag to cc-tts-stream. TDD: test first, then impl. Files: src/cc_tts/stream_json.py, tests/test_stream_json.py

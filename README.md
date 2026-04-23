@@ -97,7 +97,7 @@ See [docs/adr/0001-tts-delivery-modes.md](docs/adr/0001-tts-delivery-modes.md) f
 
 ### Architecture diagrams
 
-**Stop hook (recommended)**
+#### Stop hook (recommended)
 
 ```text
 claude (interactive, Ink UI)
@@ -111,7 +111,7 @@ speak.py --stream → speak_streaming()
 edge_stream.py (per engine) → player stdin
 ```
 
-**Stream-json pipe (non-interactive, single prompt)**
+#### Stream-json pipe (non-interactive, single prompt)
 
 ```text
 cc-tts-stream "your prompt"
@@ -125,7 +125,7 @@ sentence_buffer.py → sentences as they arrive
 tts_worker.py queue → speak_streaming() (streaming per engine)
 ```
 
-**PTY proxy (legacy, Ink-dependent)**
+#### PTY proxy (legacy, Ink-dependent)
 
 ```text
 cc-tts-wrap claude

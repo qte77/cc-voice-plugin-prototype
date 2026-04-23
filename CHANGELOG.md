@@ -4,9 +4,33 @@
 
 ## [0.6.0] - 2026-04-23
 
+### Added
+
+- feat(stt): token optimization for `/listen` — `strip_fillers()`, `match_intent()`, `cap_words()` preprocessors wired into live pipeline; matched intents skip LLM entirely (#29)
+- feat(stt): `strip_fillers`, `intent_match`, `max_words` config fields in `[stt]` section (#29)
+- feat(repl): streaming sentence-by-sentence TTS during generation via `_SentenceBuffer` + queue worker (#56)
+- feat(repl): "thinking..." indicator between send and first response delta (#56)
+- feat(repl): tool-use event rendering — displays `[tool_name]` during tool calls (#56)
+- feat(gha): bump helper scripts (`create_pr.sh`, `delete_branch_pr_tag.sh`) with DRY_RUN support (#72)
+- docs: CONTRIBUTING.md — setup, workflow, commit conventions (#56)
+- test: 25 new STT tests (preprocess + intents) and 24 BATS tests for bump scripts (#29, #72)
+
+### Changed
+
+- refactor(config): migrate TTS, STT, VLM configs from dataclass + manual env overrides to pydantic `BaseSettings` with `env_prefix`; shared `cc_voice_common.config` module replaces 3 copies of `_find_config_file()` — net −85 LOC (#39)
+- fix(repl): Ctrl+C stops TTS playback instead of killing REPL; second press within 1s exits (#56)
+- fix(gha): bump workflow creates PR from ephemeral branch instead of pushing directly to protected main (#72)
+- fix: replace LICENSE with canonical Apache 2.0 text (GitHub license detection) + add NOTICE (#70)
+- chore: enable `gha-dev` plugin for BATS + GHA skill access (#73)
+
+### Dependencies
+
+- add `pydantic-settings>=2.9.1` (config migration) (#39)
+
 ## [0.5.0] - 2026-04-11
 
 ### Added
+
 - feat(see): `cc_vlm` module with in-process `llama-cpp-python` backend — `/see` skill captures screen, runs a local VLM (Qwen2.5-VL default) with task-constrained prompt templates, returns a text description for Claude's prompt. ~120 tokens/call vs ~1,600 for raw vision (~13× reduction); 0 tokens on cache hits via BLAKE3 frame hash LRU. (#26)
 - feat(see): `--image-file PATH` flag — describe a pre-captured image instead of capturing the screen; enables headless testing and saved-screenshot use cases. (#26)
 - feat(see): five task-constrained prompt templates (terminal, editor, browser, gui, generic) capping VLM output length at the source. (#26)
@@ -20,6 +44,7 @@
 - docs(roadmap): `docs/roadmap/v0.5.x.md` — living tracker for deferred ideas and rejected directions alongside filed issues. (#35)
 
 ### Changed
+
 - fix(types): narrow `listen.py` config parameter to `STTConfig | None` (was `object`) — eliminates pyright strict errors without per-line suppressions. (#26)
 - fix(stt): add `argparse` to `cc_stt/__main__.py` — `python -m cc_stt --help` now works; previously jumped straight to `listen_live()` and errored. Backward compat preserved for `python -m cc_stt hook` and file transcription. (#26)
 - chore(build): `[project.optional-dependencies] all` now uses PEP 621 self-references (`cc-voice[piper]`, etc.) instead of duplicating every dep — fixed long-standing DRY violation. (#26)
@@ -27,6 +52,7 @@
 ## [0.4.0] - 2026-04-11
 
 ### Added
+
 - feat(stt): live `/listen` pipeline — mic capture → VAD buffering → Moonshine/Vosk transcription → PTY injection (#14)
 - feat(stt): file transcription mode via `transcribe_file()` (#14)
 - feat(stt): `__main__.py` dispatcher routing to listen/transcribe/hook modes (#14)
@@ -39,6 +65,7 @@
 - test: 19 plugin config validation tests — plugin.json schema, marketplace source resolution (#13)
 
 ### Changed
+
 - fix(types): adopt pyright strict + suppress-unknowns config — resolves untyped-library leakage from sounddevice / pydantic-settings; ported from sibling project Agents-eval (#19)
 - fix(types): narrow `listen.py` config parameter to `STTConfig | None` instead of `object` (#14)
 - chore(build): Makefile uses `uv sync` only — dropped `uv pip install` rule violations in `setup` and `setup_dev` (#19)
@@ -51,6 +78,7 @@
 - build(deps-dev): bump bump-my-version ≥0.29.0 → ≥1.3.0 (#21)
 
 ### Fixed
+
 - fix: plugin discovery — changed marketplace source from relative path to github source type (#7)
 - fix: suppress CodeFactor B607/B108 warnings (#11)
 
