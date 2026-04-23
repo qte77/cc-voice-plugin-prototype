@@ -95,9 +95,9 @@ def synthesize_and_play(text: str, config: TTSConfig | None = None) -> None:
 
 def _toggle_auto_read() -> None:
     """Toggle auto_read in .cc-voice.toml [tts] section."""
-    from cc_tts.config import _find_config_file  # pyright: ignore[reportPrivateUsage]
+    from cc_voice_common.config import find_config_file
 
-    config_path = _find_config_file()
+    config_path = find_config_file()
     if config_path is None:
         print("No .cc-voice.toml found — create one first", file=sys.stderr)
         sys.exit(1)
