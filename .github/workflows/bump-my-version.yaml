@@ -12,8 +12,14 @@ on:
           - minor
           - major
 
+env:
+  BRANCH_NEW: "bump-${{ github.run_number }}-${{ github.ref_name }}"
+  SKIP_PR_HINT: "[skip ci bump]"
+  SCRIPT_PATH: ".github/scripts"
+
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   bump:
@@ -21,14 +27,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+
+      - name: Set git config and create branch
+        run: |
+          git config user.email "bumped@qte77.gha"
+          git config user.name "bump-my-version"
+          git checkout -b "${{ env.BRANCH_NEW }}"
 
       - name: Bump version
+        id: bump
         uses: callowayproject/bump-my-version@0.29.0
+        env:
+          BUMPVERSION_TAG: "true"
         with:
           args: ${{ inputs.bump_type }}
+          branch: ${{ env.BRANCH_NEW }}
+
+      - name: Create PR
+        if: steps.bump.outputs.bumped == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          src="${{ env.SCRIPT_PATH }}/create_pr.sh"
+          chmod +x "$src"
+          $src "${{ github.ref_name }}" "${{ env.BRANCH_NEW }}" "${{ env.SKIP_PR_HINT }}" "${{ steps.bump.outputs.previous-version }}" "${{ steps.bump.outputs.current-version }}"
 
-      - name: Push changes
-        run: git push --follow-tags
+      - name: Cleanup on failure
+        if: failure() || cancelled()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          src="${{ env.SCRIPT_PATH }}/delete_branch_pr_tag.sh"
+          chmod +x "$src"
+          $src "${{ github.repository }}" "${{ env.BRANCH_NEW }}" "${{ steps.bump.outputs.current-version }}"
