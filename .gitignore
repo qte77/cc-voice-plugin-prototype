@@ -27,12 +27,15 @@
 #   Tested: CC v2.1.52 (Feb 2026). No fix available; sandbox must be disabled
 #   for worktree git operations.
 #
+
 # git internals (denyWithinAllow drops .git/ prefix)
 /HEAD
 /config
+
 # /hooks — disabled, conflicts with plugin hooks/ directory
 /objects
 /refs
+
 # shell dotfiles (cwd instead of $HOME)
 /.bash_profile
 /.bashrc
@@ -42,12 +45,14 @@
 /.gitconfig
 /.gitmodules
 /.ripgreprc
+
 # created as empty files, not dirs — bypass trailing-slash gitignore patterns
 /.claude/agents
 /.claude/commands
 /.claude/skills
 /.idea
 /.vscode
+
 # Python
 __pycache__/
 *.pyc
@@ -57,5 +62,9 @@ dist/
 .pytest_cache/
 .ruff_cache/
 .coverage
+
 # Claude Code local overrides
 .claude/settings.local.json
+
+# Auto-memory seed (created by session hooks, not project code)
+MEMORY.md
