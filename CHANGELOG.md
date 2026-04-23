@@ -4,6 +4,26 @@
 
 ## [0.6.0] - 2026-04-23
 
+### Added
+- feat(stt): token optimization for `/listen` — `strip_fillers()`, `match_intent()`, `cap_words()` preprocessors wired into live pipeline; matched intents skip LLM entirely (#29)
+- feat(stt): `strip_fillers`, `intent_match`, `max_words` config fields in `[stt]` section (#29)
+- feat(repl): streaming sentence-by-sentence TTS during generation via `_SentenceBuffer` + queue worker (#56)
+- feat(repl): "thinking..." indicator between send and first response delta (#56)
+- feat(repl): tool-use event rendering — displays `[tool_name]` during tool calls (#56)
+- feat(gha): bump helper scripts (`create_pr.sh`, `delete_branch_pr_tag.sh`) with DRY_RUN support (#72)
+- docs: CONTRIBUTING.md — setup, workflow, commit conventions (#56)
+- test: 25 new STT tests (preprocess + intents) and 24 BATS tests for bump scripts (#29, #72)
+
+### Changed
+- refactor(config): migrate TTS, STT, VLM configs from dataclass + manual env overrides to pydantic `BaseSettings` with `env_prefix`; shared `cc_voice_common.config` module replaces 3 copies of `_find_config_file()` — net −85 LOC (#39)
+- fix(repl): Ctrl+C stops TTS playback instead of killing REPL; second press within 1s exits (#56)
+- fix(gha): bump workflow creates PR from ephemeral branch instead of pushing directly to protected main (#72)
+- fix: replace LICENSE with canonical Apache 2.0 text (GitHub license detection) + add NOTICE (#70)
+- chore: enable `gha-dev` plugin for BATS + GHA skill access (#73)
+
+### Dependencies
+- add `pydantic-settings>=2.9.1` (config migration) (#39)
+
 ## [0.5.0] - 2026-04-11
 
 ### Added
