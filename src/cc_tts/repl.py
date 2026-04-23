@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import queue
+import re
 import shutil
 import subprocess
 import sys
 import threading
+import time
 from collections.abc import Callable, Iterable
 
 from cc_tts.config import load_config
@@ -55,6 +58,10 @@ def read_stream_events(
         etype = event.get("event", {}).get("type") or event.get("type")
         if etype in ("message_stop", "result"):
             turn_done.set()
+        elif etype == "tool_use":
+            tool_name = event.get("event", {}).get("name", "tool")
+            sys.stdout.write(f"\n[{tool_name}] ")
+            sys.stdout.flush()
 
 
 def _start_claude() -> subprocess.Popen[str]:
@@ -92,13 +99,55 @@ def _handle_local_cmd(cmd: str, auto_read: bool) -> tuple[bool, bool]:
     return False, auto_read
 
 
-def _make_on_text(buf: list[str]) -> Callable[[str], None]:
+_SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])\s+|\n\n")
+
+
+class _SentenceBuffer:
+    """Accumulates text deltas and fires on_sentence on sentence boundaries."""
+
+    def __init__(self, on_sentence: Callable[[str], None]) -> None:
+        self._buf = ""
+        self._on_sentence = on_sentence
+
+    def feed(self, text: str) -> None:
+        self._buf += text
+        while (m := _SENTENCE_BOUNDARY.search(self._buf)) is not None:
+            sentence = self._buf[: m.start()].strip()
+            self._buf = self._buf[m.end() :]
+            if sentence:
+                self._on_sentence(sentence)
+
+    def flush(self) -> None:
+        if self._buf.strip():
+            self._on_sentence(self._buf.strip())
+            self._buf = ""
+
+
+def _tts_worker(q: queue.Queue[str | None], voice: str, speed: float, engine: str) -> None:
+    """Consume sentences from queue and speak them sequentially."""
+    while True:
+        sentence = q.get()
+        if sentence is None:
+            break
+        speak_streaming(sentence, voice=voice, speed=speed, engine=engine)
+
+
+def _make_on_text(
+    buf: list[str],
+    first_delta: list[bool],
+    sentence_buf: _SentenceBuffer | None = None,
+) -> Callable[[str], None]:
     """Return an on_text callback that appends to buf and writes to stdout."""
 
     def _on_text(text: str) -> None:
+        if first_delta[0]:
+            sys.stdout.write("\r\033[K")  # clear "thinking..." line
+            first_delta[0] = False
         buf.append(text)
         sys.stdout.write(text)
         sys.stdout.flush()
+        if sentence_buf is not None:
+            sentence_buf.feed(text)
 
     return _on_text
 
@@ -112,21 +161,41 @@ def main() -> None:
     assert proc.stdin is not None
     assert proc.stdout is not None
 
+    tts_q: queue.Queue[str | None] = queue.Queue()
+    tts_thread = threading.Thread(
+        target=_tts_worker,
+        args=(tts_q, config.voice, config.speed, config.engine),
+        daemon=True,
+    )
+    tts_thread.start()
+
+    sentence_buf = _SentenceBuffer(tts_q.put) if auto_read else None
     turn_done = threading.Event()
     response_text: list[str] = []
+    first_delta: list[bool] = [True]
     threading.Thread(
         target=read_stream_events,
-        args=(proc.stdout, _make_on_text(response_text), turn_done),
+        args=(proc.stdout, _make_on_text(response_text, first_delta, sentence_buf), turn_done),
         daemon=True,
     ).start()
     print("cc-voice REPL • /exit to quit, /stop to interrupt TTS, /toggle for auto-read\n")
+
+    last_interrupt = 0.0
 
     try:
         while True:
             try:
                 user_input = input("user> ")
-            except (EOFError, KeyboardInterrupt):
+            except EOFError:
                 break
+            except KeyboardInterrupt:
+                now = time.monotonic()
+                if now - last_interrupt < 1.0:
+                    break
+                last_interrupt = now
+                _stop_playback()
+                print("\n(audio stopped — press Ctrl+C again to exit)")
+                continue
             if not user_input.strip():
                 continue
             cmd = parse_local_command(user_input)
@@ -138,17 +207,19 @@ def main() -> None:
 
             response_text.clear()
             turn_done.clear()
+            first_delta[0] = True
             proc.stdin.write(format_user_message(user_input) + "\n")
             proc.stdin.flush()
-            sys.stdout.write("\n")
+            sys.stdout.write("thinking...")
+            sys.stdout.flush()
             turn_done.wait(timeout=120)
+            if sentence_buf is not None:
+                sentence_buf.flush()
             sys.stdout.write("\n\n")
-
-            if auto_read and (full := "".join(response_text).strip()):
-                speak_streaming(full, voice=config.voice, speed=config.speed, engine=config.engine)
     except KeyboardInterrupt:
         pass
     finally:
+        tts_q.put(None)
         proc.stdin.close()
         proc.wait(timeout=5)
 
