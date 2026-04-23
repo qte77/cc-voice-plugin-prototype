@@ -19,6 +19,9 @@ class STTConfig(BaseSettings):
     wake_word: str = "hey_claude"
     mic_device: str = "default"
     auto_listen: bool = False
+    strip_fillers: bool = True
+    intent_match: bool = True
+    max_words: int = 200
 
     @classmethod
     def settings_customise_sources(
